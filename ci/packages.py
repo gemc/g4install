@@ -55,8 +55,8 @@ pkg_sections = {
 	},
 	# vnc: use tigervnc + python-websockify; we’ll fetch noVNC from GitHub
 	"vnc":            {
-		"fedora":    ["xterm", "x11vnc", "websockify"],
-		"ubuntu":    ["xterm", "x11vnc", "websockify"],
+		"fedora":    ["xterm", "x11vnc"],
+		"ubuntu":    ["xterm", "x11vnc"],
 		"archlinux": ["xterm", "tigervnc"],
 	},
 	"qt6":            {

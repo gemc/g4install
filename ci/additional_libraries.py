@@ -45,6 +45,8 @@ def install_meson(meson_version: str) -> str:
 
 def install_novnc(novnc_ver: str) -> str:
 	url = f"https://github.com/novnc/noVNC/archive/refs/tags/{novnc_ver}.tar.gz"
+	websockify_url = "https://github.com/novnc/websockify
+
 	return (
 		"\n# Install noVNC\n"
 		"RUN mkdir -p /opt && cd /opt \\\n"
@@ -52,8 +54,10 @@ def install_novnc(novnc_ver: str) -> str:
 		f"    && tar -xzf {novnc_ver}.tar.gz \\\n"
 		f"    && rm {novnc_ver}.tar.gz \\\n"
 		f"    && mv noVNC-{novnc_ver.lstrip('v')} /opt/novnc \\\n"
-		f"    && ln -sf /opt/novnc/vnc.html /opt/novnc/index.html\\\n"
-		"     && ln -sf /opt/novnc/utils/novnc_proxy /usr/local/bin/novnc_proxy\n"
+		"     && ln -sf /opt/novnc/vnc.html /opt/novnc/index.html\\\n"
+		"     && ln -sf /opt/novnc/utils/novnc_proxy /usr/local/bin/novnc_proxy\\\n"
+		f"    && git clone --depth=1 {websockify_url} /opt/novnc/utils/websockify\n"
+
 	)
 
 
