@@ -123,27 +123,28 @@ jobs:
           {
             echo "## Docker Image"
             echo ""
-            echo "Notice: add --platform=linux/amd64 for MacOS silicon hosts"
+            echo "For MacOS silicon hosts set this up first:"
+            echo "export PLATFORM=--platform=linux/amd64"
             echo ""
             echo "**Tag:** \`${IMAGE}:${TAG}\`"
           
             echo ""
             echo "### Pull"
             echo '```bash'
-            echo "docker pull ${IMAGE}:${TAG}"
+            echo "docker pull $PLATFORM ${IMAGE}:${TAG}"
             echo '```'
           
             echo ""
             echo "### Run (interactive shell)"
             echo '```bash'
-            echo "docker run --rm -it ${IMAGE}:${TAG} bash -l"
+            echo "docker run --rm -it $PLATFORM ${IMAGE}:${TAG} bash -l"
             echo '```'
           
             echo ""
             echo "### Run in VNC mode (web browser)"
-            echo "_noVNC web client at http://localhost:8080/vnc.html_
+            echo "_noVNC web client at http://localhost:8080/vnc.html_"
             echo '```bash'
-            echo "docker run --rm -it ${IMAGE}:${TAG} bash -l"
+            echo "docker run --rm -it $PLATFORM ${IMAGE}:${TAG}"
             echo '```'
           
           } >> "$SUMMARY_OUT"
