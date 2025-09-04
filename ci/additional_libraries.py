@@ -45,7 +45,7 @@ def install_meson(meson_version: str) -> str:
 
 def install_novnc(novnc_ver: str) -> str:
 	url = f"https://github.com/novnc/noVNC/archive/refs/tags/{novnc_ver}.tar.gz"
-	websockify_url = "https://github.com/novnc/websockify
+	websockify_url = "https://github.com/novnc/websockify"
 
 	return (
 		"\n# Install noVNC\n"
