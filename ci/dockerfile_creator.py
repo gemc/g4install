@@ -31,6 +31,7 @@ LABEL maintainer="Maurizio Ungaro <ungaro@jlab.org>"
 
 # run shell instead of sh
 SHELL ["/bin/bash", "-c"]
+CMD ["bash", "-l"]
 ENV AUTOBUILD=1
 """
 

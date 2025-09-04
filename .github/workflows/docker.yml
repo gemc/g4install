@@ -22,10 +22,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ci/distros_tags.sh must echo a JSON matrix to $GITHUB_OUTPUT:
-      #   echo "matrix=<JSON>" >> $GITHUB_OUTPUT
-      # and the base image name (no tag) like "ghcr.io/<owner>/geant4":
-      #   echo "image=ghcr.io/<owner>/geant4" >> $GITHUB_OUTPUT
       - id: scan
         name: Build matrix
         run: ci/distros_tags.sh
@@ -59,16 +55,16 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - id: meta
-        name: Generate tags & labels
         uses: docker/metadata-action@v5
         with:
           images: ${{ needs.discover.outputs.image }}
           tags: |
-            # Single canonical tag: geant4-<tag>-<base>
-            type=raw,value=${{ matrix.geant4_tag }}-${{ matrix.image }})-${{ matrix.image_tag }}
+            # geant4-<tag>-<base>-<base_tag>
+            type=raw,value=${{ format('{0}-{1}-{2}', matrix.geant4_tag, matrix.image, matrix.image_tag) }}
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
             org.opencontainers.image.description=Geant4 image (${{ matrix.geant4_tag }} on ${{ matrix.image }}) ${{ matrix.image_tag }}
+
 
       # Generate a Dockerfile using your python script, passing the FULL base image
       - name: Generate Dockerfile
@@ -112,7 +108,7 @@ jobs:
         shell: bash
         env:
           IMAGE: ${{ needs.discover.outputs.image }}
-          TAG: ${{ matrix.geant4_tag }}-${{ matrix.image }})-${{ matrix.image_tag }}
+          TAG: ${{ matrix.geant4_tag }}-${{ matrix.image }}-${{ matrix.image_tag }}
           PUSHED: ${{ github.event_name != 'pull_request' }}
         run: |
           # prepare summary target safely
