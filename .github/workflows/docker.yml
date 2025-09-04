@@ -123,32 +123,25 @@ jobs:
           {
             echo "## Docker Image"
             echo ""
+            echo ""
             echo "**Tag:** \`${IMAGE}:${TAG}\`"
           
-            if [ "$PUSHED" = "true" ]; then
-              echo ""
-              echo "### Pull"
-              echo '```bash'
-              echo "docker pull ${IMAGE}:${TAG}"
-              echo '```'
-            else
-              echo ""
-              echo "_PR build (image not pushed). Loaded locally on the runner with tags:_"
-              echo '```'
-              printf '%s\n' "${{ steps.meta.outputs.tags }}"
-              echo '```'
-            fi
+            echo ""
+            echo "### Pull"
+            echo '```bash'
+            echo "docker pull ${IMAGE}:${TAG}"
+            echo '```'
           
             echo ""
             echo "### Run (interactive shell)"
             echo '```bash'
-            echo "docker run --rm -it ${IMAGE}:${TAG} bash"
+            echo "docker run --rm -it ${IMAGE}:${TAG} bash -l"
             echo '```'
           
             echo ""
             echo "### Run on MacOS silicon (interactive shell)"
             echo '```bash'
-            echo "docker run --rm -it --platform=linux/amd64 ${IMAGE}:${TAG} bash"
+            echo "docker run --rm -it --platform=linux/amd64 ${IMAGE}:${TAG} bash -l"
             echo '```'
           
           } >> "$SUMMARY_OUT"

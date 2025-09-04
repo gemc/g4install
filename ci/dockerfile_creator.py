@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename
+from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, remote_novnc_startup_script
 from packages import packages_install_command
 from additional_libraries import install_additional_libraries
 
@@ -26,23 +26,29 @@ cleanup_string_by_family = {
 
 
 def docker_header(image: str, tag: str) -> str:
-	return f"""FROM {image}:{tag}
-LABEL maintainer="Maurizio Ungaro <ungaro@jlab.org>"
+	commands = f"FROM {image}:{tag}\n"
+	commands += f"LABEL maintainer=\"Maurizio Ungaro <ungaro@jlab.org>\"\n\n"
+	commands += f"# run bash instead of sh\n"
+	commands += f"SHELL [\"/bin/bash\", \"-c\"]\n\n"
+	commands += f"# Make browser UI the default; users can override with \"docker run ... bash -l\"\n"
+	commands += f"CMD [\"{remote_novnc_startup_script()}\"]\n\n"
+	commands += f"ENV AUTOBUILD=1\n"
+	return commands
 
-# run shell instead of sh
-SHELL ["/bin/bash", "-c"]
-CMD ["bash", "-l"]
-ENV AUTOBUILD=1
-"""
 
-
-def copy_setup_file() -> str:
+def copy_setup_file(image:str) -> str:
 	local_setup_file = local_setup_filename()
 	remote_setup_file = remote_setup_filename()
-	return f"""
-# Copy local setup file
-COPY {local_setup_file} {remote_setup_file}
-"""
+
+	commands = "\n"
+	commands += "# Create local setup file\n"
+	commands += f"COPY {local_setup_file} {remote_setup_file} \n"
+
+	family = map_family(image)
+	if family == "fedora":
+		commands += f"COPY ci/scripts/fedora/start-novnc.sh /usr/local/bin/start-novnc\n"
+
+	return commands
 
 def install_jlab_ca(image: str) -> str:
 	family = map_family(image)
@@ -89,7 +95,7 @@ def create_dockerfile(image: str, base: str, root_version: str, meson_version: s
 	commands = ""
 
 	commands += docker_header(image, base)
-	commands += copy_setup_file()
+	commands += copy_setup_file(image)
 	commands += install_jlab_ca(image)
 	commands += additional_preamble(image)
 	commands += packages_install_command(image)
