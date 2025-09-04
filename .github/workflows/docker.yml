@@ -124,7 +124,10 @@ jobs:
             echo "## Docker Image"
             echo ""
             echo "For MacOS silicon hosts set this up first:"
+            echo '```bash'
             echo "export PLATFORM=--platform=linux/amd64"
+            echo '```'
+            echo ""
             echo ""
             echo "**Tag:** \`${IMAGE}:${TAG}\`"
           
@@ -144,7 +147,7 @@ jobs:
             echo "### Run in VNC mode (web browser)"
             echo "_noVNC web client at http://localhost:8080/vnc.html_"
             echo '```bash'
-            echo "docker run --rm -it $PLATFORM ${IMAGE}:${TAG}"
+            echo "docker run --rm -it $PLATFORM -p 8080:6080 ${IMAGE}:${TAG}"
             echo '```'
           
           } >> "$SUMMARY_OUT"

@@ -14,13 +14,18 @@ set -Eeuo pipefail
 : "${XVFB_BIN:=Xvfb}"
 : "${X11VNC_BIN:=x11vnc}"
 : "${NOVNC_PROXY_BIN:=novnc_proxy}"  # symlinked by your installer to /usr/local/bin/novnc_proxy
+: "${VNC_BIND:=localhost}"          # 'localhost' or '0.0.0.0'
+: "${X11VNC_PASSWORD:=}"            # optional
 
-# ---------- load shell environment (ROOT, etc.) if present ----------
-# Covers both login and non-login shells when this script is the CMD/ENTRYPOINT
-if [ -r /etc/profile ]; then . /etc/profile; fi
-if [ -r /etc/bash.bashrc ]; then . /etc/bash.bashrc; fi  # Debian/Ubuntu, harmless on Fedora
-if [ -r /etc/bashrc ]; then . /etc/bashrc; fi            # Fedora/RHEL family
-if [ -r /etc/profile.d/local_g4setup.sh ]; then . /etc/profile.d/local_g4setup.sh; fi
+
+### ---------- load shell environment (ROOT, etc.) if present ----------
+# Temporarily disable nounset to avoid errors in distro profiles (e.g. HISTCONTROL)
+_had_nounset=0
+case $- in *u*) _had_nounset=1; set +u;; esac
+for f in /etc/profile /etc/bash.bashrc /etc/bashrc /etc/profile.d/local_g4setup.sh; do
+  [ -r "$f" ] && . "$f"
+done
+[ "$_had_nounset" -eq 1 ] && set -u
 
 # ---------- helpers ----------
 _sock_for_display() {
@@ -64,22 +69,32 @@ if [ -n "${AUTOSTART:-}" ] && command -v xterm >/dev/null 2>&1; then
   DISPLAY="$DISPLAY" bash -lc "$AUTOSTART" >/dev/null 2>&1 &
 fi
 
-# ---------- start x11vnc (fedora family) ----------
+VNC_BIND_OPT="-localhost"
+if [ "$VNC_BIND" != "localhost" ]; then
+  VNC_BIND_OPT=""
+fi
+
+PASS_OPT="-nopw"
+if [ -n "$X11VNC_PASSWORD" ]; then
+  PASSFILE=/etc/x11vnc.pass
+  x11vnc -storepasswd "$X11VNC_PASSWORD" "$PASSFILE"
+  PASS_OPT="-rfbauth $PASSFILE"
+fi
+
+# ---------- start x11vnc ----------
 if ! pgrep -x "$X11VNC_BIN" >/dev/null 2>&1; then
-  echo "[start-novnc] Launching x11vnc on :${VNC_PORT} (localhost only)"
-  # -localhost: only accept local connections (noVNC will connect locally)
-  # -forever: don’t exit on client disconnect
-  # -shared: allow multiple clients via the proxy
+  echo "[start-novnc] Launching x11vnc on ${VNC_BIND}:${VNC_PORT}"
   "$X11VNC_BIN" \
     -display "$DISPLAY" \
     -rfbport "$VNC_PORT" \
-    -localhost \
+    $VNC_BIND_OPT \
     -forever \
     -shared \
-    -nopw \
+    $PASS_OPT \
     -bg \
     -quiet
 fi
+
 
 # ---------- start noVNC proxy (foreground) ----------
 echo "[start-novnc] Starting noVNC on http://${NOVNC_LISTEN}:${NOVNC_PORT} (→ VNC localhost:${VNC_PORT})"
