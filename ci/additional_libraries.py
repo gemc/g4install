@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from functions import local_setup_filename, curl_command, map_family, is_valid_image
+from functions import remote_setup_filename, curl_command, map_family, is_valid_image
 
 def install_root_tarball(image: str, root_version: str) -> str:
 	# on fedora lines, we would install from dnf

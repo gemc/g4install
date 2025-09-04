@@ -31,7 +31,7 @@ jobs:
         run: ci/distros_tags.sh
 
   build:
-    name: Build ${{ matrix.geant4_tag }} on ${{ matrix.docker_from }}
+    name: Build ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }}
     needs: discover
     runs-on: ubuntu-latest
     permissions:
@@ -75,7 +75,7 @@ jobs:
         run: |
           python3 ci/dockerfile_creator.py \
           -i "${{ matrix.image }}" \
-          -t "${{ matrix.image_tag }}" 
+          -t "${{ matrix.image_tag }}" \
           --root-version "${{ matrix.root_tag || '6.36.04' }}" \
           --meson-version "${{ matrix.meson_tag || '1.9.0' }}" \
           --novnc-version "${{ matrix.novnc_tag || 'v1.6.0' }}" \
