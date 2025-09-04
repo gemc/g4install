@@ -21,7 +21,6 @@ def map_family(image: str) -> str:
 		return "ubuntu"
 	return image
 
-
 def unique_preserve_order(items):
 	seen = set()
 	out = []

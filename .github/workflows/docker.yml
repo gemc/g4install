@@ -65,7 +65,7 @@ jobs:
           images: ${{ needs.discover.outputs.image }}
           tags: |
             # Single canonical tag: geant4-<tag>-<base>
-            type=raw,value=${{ matrix.geant4_tag }}-${{ replace(matrix.docker_from, ':', '-') }}
+            type=raw,value=${{ matrix.geant4_tag }}-${{ matrix.image }})-${{ matrix.image_tag }}
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
             org.opencontainers.image.description=Geant4 image (${{ matrix.geant4_tag }} on ${{ matrix.image }}) ${{ matrix.image_tag }}
@@ -81,7 +81,7 @@ jobs:
           --novnc-version "${{ matrix.novnc_tag || 'v1.6.0' }}" \
           > Dockerfile.generated
           echo "Generated Dockerfile:"
-          sed -n '1,60p' Dockerfile.generated
+          cat Dockerfile.generated
 
       - name: Choose platforms for this item
         id: plats
@@ -112,8 +112,7 @@ jobs:
         shell: bash
         env:
           IMAGE: ${{ needs.discover.outputs.image }}
-          # sanitize docker_from by replacing ":" -> "-"
-          TAG: ${{ format('{0}-{1}', matrix.geant4_tag, replace(matrix.docker_from, ':', '-')) }}
+          TAG: ${{ matrix.geant4_tag }}-${{ matrix.image }})-${{ matrix.image_tag }}
           PUSHED: ${{ github.event_name != 'pull_request' }}
           IS_ARCH: ${{ startsWith(matrix.docker_from, 'archlinux:') }}
         run: |
