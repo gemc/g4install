@@ -65,15 +65,21 @@ jobs:
           images: ${{ needs.discover.outputs.image }}
           tags: |
             # Single canonical tag: geant4-<tag>-<base>
-            type=raw,value=${{ matrix.geant4_tag }}-${{ matrix.docker_from }}
+            type=raw,value=${{ matrix.geant4_tag }}-${{ replace(matrix.docker_from, ':', '-') }}
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
-            org.opencontainers.image.description=Geant4 image (${{ matrix.geant4_tag }} on ${{ matrix.docker_from }})
+            org.opencontainers.image.description=Geant4 image (${{ matrix.geant4_tag }} on ${{ matrix.image }}) ${{ matrix.image_tag }}
 
       # Generate a Dockerfile using your python script, passing the FULL base image
       - name: Generate Dockerfile
         run: |
-          python3 ci/dockerfile_creator.py -p "${{ matrix.distro }}" -f "${{ matrix.docker_from }}" --install > Dockerfile.generated
+          python3 ci/dockerfile_creator.py \
+          -i "${{ matrix.image }}" \
+          -t "${{ matrix.image_tag }}" 
+          --root-version "${{ matrix.root_tag || '6.36.04' }}" \
+          --meson-version "${{ matrix.meson_tag || '1.9.0' }}" \
+          --novnc-version "${{ matrix.novnc_tag || 'v1.6.0' }}" \
+          > Dockerfile.generated
           echo "Generated Dockerfile:"
           sed -n '1,60p' Dockerfile.generated
 
@@ -106,7 +112,7 @@ jobs:
         shell: bash
         env:
           IMAGE: ${{ needs.discover.outputs.image }}
-          TAG: ${{ matrix.geant4_tag }}-${{ matrix.docker_from }}
+          TAG="${{ matrix.geant4_tag }}-$(echo '${{ matrix.docker_from }}' | tr ':' '-')"
           PUSHED: ${{ github.event_name != 'pull_request' }}
           IS_ARCH: ${{ startsWith(matrix.docker_from, 'archlinux:') }}
         run: |
@@ -119,14 +125,14 @@ jobs:
             mkdir -p "$(dirname "$SUMMARY_OUT")"
             echo "GITHUB_STEP_SUMMARY not set; writing to $SUMMARY_OUT"
           fi
-      
+          
           PLATFORM_HINT="--platform=linux/amd64"
-      
+          
           {
             echo "## Docker Image"
             echo ""
             echo "**Tag:** \`${IMAGE}:${TAG}\`"
-      
+          
             if [ "$PUSHED" = "true" ]; then
               echo ""
               echo "### Pull"
@@ -140,7 +146,7 @@ jobs:
               printf '%s\n' "${{ steps.meta.outputs.tags }}"
               echo '```'
             fi
-      
+          
             echo ""
             echo "### Run (interactive shell)"
             echo '```bash'
@@ -150,7 +156,7 @@ jobs:
               echo "docker run --rm -it ${IMAGE}:${TAG} bash"
             fi
             echo '```'
-      
+          
             echo ""
             echo "### Run with browser (noVNC)"
             echo "Open **http://localhost:6080** after starting."
@@ -174,11 +180,11 @@ jobs:
               echo "docker run --rm -p 6080:6080 -e GEOMETRY=1600x900 ${IMAGE}:${TAG}"
             fi
             echo '```'
-      
+          
             echo ""
             echo "### Notes by distro"
             echo "- **Ubuntu/Debian/Fedora/AlmaLinux**: Xvfb + x11vnc + packaged noVNC."
             echo "- **Arch Linux**: Xvfb + x0vncserver (TigerVNC) + noVNC from /opt (amd64-only → use \`${PLATFORM_HINT}\` on arm64)."
           } >> "$SUMMARY_OUT"
-      
+          
           echo "Summary written to: $SUMMARY_OUT"

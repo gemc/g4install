@@ -7,6 +7,9 @@ get_archlinux_latest() { echo "latest"; }
 get_almalinux_latest() { echo "9.4"; }
 get_debian_latest()    { echo "12"; }
 get_geant4_tag()       { echo "11.3.2"; }
+get_root_tag()         { echo "6.36.04"; }
+get_meson_tag()        { echo "1.9.0"; }
+get_novnc_tag()        { echo "v1.6.0"; }
 
 # Pretty-print with jq if available, otherwise emit compact JSON
 build_matrix() {
@@ -14,11 +17,11 @@ build_matrix() {
 	json=$(
 		cat    <<EOF
 {"include":[
-  {"distro":"ubuntu","docker_from":"ubuntu:$(get_ubuntu_lts)","geant4_tag":"$(get_geant4_tag)"},
-  {"distro":"fedora","docker_from":"fedora:$(get_fedora_latest)","geant4_tag":"$(get_geant4_tag)"},
-  {"distro":"archlinux","docker_from":"archlinux:$(get_archlinux_latest)","geant4_tag":"$(get_geant4_tag)"},
-  {"distro":"almalinux","docker_from":"almalinux:$(get_almalinux_latest)","geant4_tag":"$(get_geant4_tag)"},
-  {"distro":"debian","docker_from":"debian:$(get_debian_latest)","geant4_tag":"$(get_geant4_tag)"}
+  {"image":"ubuntu","image_tag":"$(get_ubuntu_lts)","geant4_tag":"$(get_geant4_tag)", "root_tag":"$(get_root_tag)", "meson_tag":"$(get_meson_tag)", "novnc_tag":"$(get_novnc_tag)"},
+  {"image":"fedora","image_tag":"$(get_fedora_latest)","geant4_tag":"$(get_geant4_tag)", "root_tag":"$(get_root_tag)", "meson_tag":"$(get_meson_tag)", "novnc_tag":"$(get_novnc_tag)"},
+  {"image":"archlinux","image_tag":"$(get_archlinux_latest)","geant4_tag":"$(get_geant4_tag)", "root_tag":"$(get_root_tag)", "meson_tag":"$(get_meson_tag)", "novnc_tag":"$(get_novnc_tag)"},
+  {"image":"almalinux","image_tag":"$(get_almalinux_latest)","geant4_tag":"$(get_geant4_tag)", "root_tag":"$(get_root_tag)", "meson_tag":"$(get_meson_tag)", "novnc_tag":"$(get_novnc_tag)"},
+  {"image":"debian","image_tag":"$(get_debian_latest)","geant4_tag":"$(get_geant4_tag)", "root_tag":"$(get_root_tag)", "meson_tag":"$(get_meson_tag)", "novnc_tag":"$(get_novnc_tag)"}
 ]}
 EOF
 	)
