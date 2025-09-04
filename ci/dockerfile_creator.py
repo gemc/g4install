@@ -46,7 +46,7 @@ def copy_setup_file(image:str) -> str:
 
 	family = map_family(image)
 	if family == "fedora":
-		commands += f"COPY ci/scripts/fedora/start-novnc.sh /usr/local/bin/start-novnc\n"
+		commands += f"COPY ci/fedora/start-novnc.sh {remote_novnc_startup_script()}\n"
 
 	return commands
 
