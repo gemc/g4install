@@ -112,7 +112,7 @@ def packages_install_command(image: str) -> str:
 	command = ""
 
 	if family == "fedora":
-		command += f"RUN dnf install -y --allowerasing {packages}\n"
+		command += f"RUN dnf install -y --allowerasing {packages}"
 
 	elif family == "ubuntu":
 		command += (
