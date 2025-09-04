@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from functions import remote_setup_filename, curl_command, map_family, is_valid_image
+from functions import remote_setup_filename, curl_command, map_family, is_valid_image, sim_home
 
 
 def install_root_tarball(image: str, root_version: str) -> str:
@@ -57,7 +57,6 @@ def install_novnc(novnc_ver: str) -> str:
 		"     && ln -sf /opt/novnc/vnc.html /opt/novnc/index.html\\\n"
 		"     && ln -sf /opt/novnc/utils/novnc_proxy /usr/local/bin/novnc_proxy\\\n"
 		f"    && git clone --depth=1 {websockify_url} /opt/novnc/utils/websockify\n"
-
 	)
 
 
@@ -74,6 +73,14 @@ def install_additional_libraries(image: str, root_version: str, meson_version: s
 
 	return commands
 
+def install_g4installer(is_cvfms: bool) -> str:
+	g4install = sim_home(is_cvfms)
+	commands = ''
+	commands += f'RUN mkdir -p {g4install} \\\n'
+	commands += f'    && cd {g4install} \\\n'
+	commands += f'    && git clone --depth=1 https://github.com/gemc/g4install . \\\n'
+	commands += f'    && echo "module use {g4install}/modules" >> {remote_setup_filename()}\n'
+	return commands
 
 def main():
 	parser = argparse.ArgumentParser(

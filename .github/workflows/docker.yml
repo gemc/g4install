@@ -121,7 +121,7 @@ jobs:
           fi
                     
           {
-            echo ""
+            echo "\n\n"
             echo "## **Tag:** \`${IMAGE}:${TAG}\`"
             echo ""
             echo "For MacOS silicon hosts set this up first:"
@@ -140,21 +140,21 @@ jobs:
             echo ""
             echo "### Run interactive shell"
             echo '```bash'
-            echo "docker run --rm -it $PLATFORM ${IMAGE}:${TAG} bash -l"
+            echo "docker run --rm -it \$PLATFORM ${IMAGE}:${TAG} bash -l"
             echo '```'
           
             echo ""
             echo "### Run in Browser (noVNC):"
             echo "_noVNC web client at http://localhost:8080/vnc.html_"
             echo '```bash'
-            echo "docker run --rm -it $PLATFORM -p 8080:6080 ${IMAGE}:${TAG}"
+            echo "docker run --rm -it \$PLATFORM -p 8080:6080 ${IMAGE}:${TAG}"
             echo '```'
 
             echo ""
             echo "### Run in Native VNC client (TigerVNC/RealVNC/etc.):"
-            echo "_noVNC web client at http://localhost:8080/vnc.html_"
+            echo "VNC client at localhost:5900 (password: change-me)"
             echo '```bash'
-            echo "docker run --rm -it $PLATFORM -p 8080:6080 -p 5900:5900 -e VNC_BIND=0.0.0.0 -e X11VNC_PASSWORD='change-me' ${IMAGE}:${TAG}"
+            echo "docker run --rm -it \$PLATFORM -p 8080:6080 -p 5900:5900 -e VNC_BIND=0.0.0.0 -e X11VNC_PASSWORD='change-me' ${IMAGE}:${TAG}"
             echo '```'
           
           } >> "$SUMMARY_OUT"

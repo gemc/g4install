@@ -3,7 +3,7 @@ import argparse
 
 from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, remote_novnc_startup_script
 from packages import packages_install_command
-from additional_libraries import install_additional_libraries
+from additional_libraries import install_additional_libraries, install_g4installer
 
 cleanup_string_by_family = {
 	"fedora":    (
@@ -47,6 +47,8 @@ def copy_setup_file(image:str) -> str:
 	family = map_family(image)
 	if family == "fedora":
 		commands += f"COPY ci/fedora/start-novnc.sh {remote_novnc_startup_script()}\n"
+	elif family == "ubuntu":
+		commands += f"COPY ci/debian/start-novnc.sh {remote_novnc_startup_script()}\n"
 
 	return commands
 
@@ -101,6 +103,7 @@ def create_dockerfile(image: str, base: str, root_version: str, meson_version: s
 	commands += packages_install_command(image)
 	commands += cleanup_string_by_family[map_family(image)]
 	commands += install_additional_libraries(image, root_version, meson_version, novnc_version)
+	commands += install_g4installer(0)
 
 	return commands
 

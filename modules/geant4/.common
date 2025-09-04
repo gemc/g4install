@@ -1,0 +1,30 @@
+# Common modulefile
+
+conflict geant4
+prereq sim_system
+
+module-whatis geant4 framework, https://geant4.web.cern.ch
+source [file dirname $ModulesCurrentModulefile]/../util/functions.tcl
+
+set dir [home]/[osrelease]/geant4/${version}
+set ilib [choose_dir $dir/lib $dir/lib64]
+
+prepend-path PATH $dir/bin
+prepend-ldpath    $ilib
+prepend-path      PKG_CONFIG_PATH $ilib/pkgconfig
+
+setenv G4_VERSION $version
+setenv G4INSTALL  $dir
+setenv G4LIB      $ilib
+setenv G4DATA_DIR $dir/data/Geant4-$version/data
+
+
+proc ModulesTest { } {
+	set retcode 1
+
+	if { [warndir [ getenv G4LIB ] "G4LIB is not available" err] eq 0 } {	set retcode 0 }
+
+	return $retcode
+
+}
+

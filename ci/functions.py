@@ -49,6 +49,11 @@ def remote_novnc_startup_script() -> str:
 def jlab_certificate() -> str:
 	return "/etc/pki/ca-trust/source/anchors/JLabCA.crt"
 
+def sim_home(is_cvfms: bool) -> str:
+	if is_cvfms:
+		return "/cvmfs/oasis.opensciencegrid.org/geant4"
+	else:
+		return "/opt/simulation"
 
 def curl_command(url: str) -> str:
 	"""
