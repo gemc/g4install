@@ -112,13 +112,13 @@ jobs:
         shell: bash
         env:
           IMAGE: ${{ needs.discover.outputs.image }}
-          TAG="${{ matrix.geant4_tag }}-$(echo '${{ matrix.docker_from }}' | tr ':' '-')"
+          # sanitize docker_from by replacing ":" -> "-"
+          TAG: ${{ format('{0}-{1}', matrix.geant4_tag, replace(matrix.docker_from, ':', '-')) }}
           PUSHED: ${{ github.event_name != 'pull_request' }}
           IS_ARCH: ${{ startsWith(matrix.docker_from, 'archlinux:') }}
         run: |
           # prepare summary target safely
           if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-            mkdir -p "$(dirname "$GITHUB_STEP_SUMMARY")"
             SUMMARY_OUT="$GITHUB_STEP_SUMMARY"
           else
             SUMMARY_OUT="$RUNNER_TEMP/step_summary.md"
