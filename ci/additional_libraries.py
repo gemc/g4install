@@ -3,6 +3,7 @@ import argparse
 
 from functions import remote_setup_filename, curl_command, map_family, is_valid_image
 
+
 def install_root_tarball(image: str, root_version: str) -> str:
 	# on fedora lines, we would install from dnf
 	family = map_family(image)
@@ -51,11 +52,13 @@ def install_novnc(novnc_ver: str) -> str:
 		f"    && tar -xzf {novnc_ver}.tar.gz \\\n"
 		f"    && rm {novnc_ver}.tar.gz \\\n"
 		f"    && mv noVNC-{novnc_ver.lstrip('v')} /opt/novnc \\\n"
-		"    && ln -sf /opt/novnc/utils/novnc_proxy /usr/local/bin/novnc_proxy\n"
+		f"    && ln -sf /opt/novnc/vnc.html /opt/novnc/index.html\\\n"
+		"     && ln -sf /opt/novnc/utils/novnc_proxy /usr/local/bin/novnc_proxy\n"
 	)
 
 
-def install_additional_libraries(image: str, root_version: str, meson_version: str, novnc_version: str) -> str:
+def install_additional_libraries(image: str, root_version: str, meson_version: str,
+                                 novnc_version: str) -> str:
 	commands = '\n'
 	commands += '# Install additional libraries\n'
 	commands += f'# ROOT version: {root_version}\n'
@@ -66,6 +69,7 @@ def install_additional_libraries(image: str, root_version: str, meson_version: s
 	commands += install_novnc(novnc_version)
 
 	return commands
+
 
 def main():
 	parser = argparse.ArgumentParser(
@@ -92,8 +96,10 @@ def main():
 	args = parser.parse_args()
 	is_valid_image(args.image)
 
-	commands = install_additional_libraries(args.image, args.root_version, args.meson_version, args.novnc_version)
+	commands = install_additional_libraries(args.image, args.root_version, args.meson_version,
+	                                        args.novnc_version)
 	print(commands)
+
 
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":

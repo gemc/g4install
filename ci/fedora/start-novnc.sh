@@ -14,9 +14,10 @@ set -Eeuo pipefail
 : "${XVFB_BIN:=Xvfb}"
 : "${X11VNC_BIN:=x11vnc}"
 : "${NOVNC_PROXY_BIN:=novnc_proxy}"  # symlinked by your installer to /usr/local/bin/novnc_proxy
-: "${VNC_BIND:=localhost}"          # 'localhost' or '0.0.0.0'
-: "${X11VNC_PASSWORD:=}"            # optional
-
+: "${VNC_BIND:=localhost}"           # 'localhost' or '0.0.0.0'
+: "${X11VNC_PASSWORD:=}"             # optional
+: "${NOVNC_PUBLIC_HOST:=localhost}"
+: "${NOVNC_PUBLIC_PORT:=${NOVNC_PORT}}"
 
 ### ---------- load shell environment (ROOT, etc.) if present ----------
 # Temporarily disable nounset to avoid errors in distro profiles (e.g. HISTCONTROL)
@@ -69,6 +70,7 @@ if [ -n "${AUTOSTART:-}" ] && command -v xterm >/dev/null 2>&1; then
   DISPLAY="$DISPLAY" bash -lc "$AUTOSTART" >/dev/null 2>&1 &
 fi
 
+# ---------- start x11vnc ----------
 VNC_BIND_OPT="-localhost"
 if [ "$VNC_BIND" != "localhost" ]; then
   VNC_BIND_OPT=""
@@ -81,7 +83,6 @@ if [ -n "$X11VNC_PASSWORD" ]; then
   PASS_OPT="-rfbauth $PASSFILE"
 fi
 
-# ---------- start x11vnc ----------
 if ! pgrep -x "$X11VNC_BIN" >/dev/null 2>&1; then
   echo "[start-novnc] Launching x11vnc on ${VNC_BIND}:${VNC_PORT}"
   "$X11VNC_BIN" \
@@ -96,6 +97,5 @@ if ! pgrep -x "$X11VNC_BIN" >/dev/null 2>&1; then
 fi
 
 
-# ---------- start noVNC proxy (foreground) ----------
-echo "[start-novnc] Starting noVNC on http://${NOVNC_LISTEN}:${NOVNC_PORT} (→ VNC localhost:${VNC_PORT})"
+echo "[start-novnc] Open: http://${NOVNC_PUBLIC_HOST}:${NOVNC_PUBLIC_PORT}/vnc.html"
 exec "$NOVNC_PROXY_BIN" --vnc "localhost:${VNC_PORT}" --listen "${NOVNC_LISTEN}:${NOVNC_PORT}"
