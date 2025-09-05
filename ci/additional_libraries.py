@@ -68,30 +68,8 @@ RUN pacman -Syu --noconfirm \
     && useradd -m -G wheel -s /bin/bash build \
     && echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-build \
     && chmod 440 /etc/sudoers.d/99-build \
-    && su - build -c 'git clone https://aur.archlinux.org/lmod.git && cd lmod && makepkg -si --noconfirm --needed' \
-    && mkdir -p /etc/zsh
+    && su - build -c 'git clone https://aur.archlinux.org/lmod.git && cd lmod && makepkg -si --noconfirm --needed' 
 
-# Write modules-init.zsh via heredoc (must be a separate RUN)
-RUN cat >/etc/zsh/modules-init.zsh <<'ZSH'
-# modules-init.zsh — prefer Lmod, fall back to Environment Modules
-if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; then
-  for f in \
-    /usr/share/lmod/lmod/init/zsh \
-    /usr/share/lmod/lmod/init/sh \
-    /etc/profile.d/lmod.sh \
-    /usr/share/Modules/init/zsh \
-    /usr/share/Modules/init/sh \
-    /etc/profile.d/modules.sh \
-    /usr/share/modules/init/zsh \
-    /usr/share/modules/init/sh
-  do
-    [[ -r "$f" ]] && source "$f" && break
-  done
-fi
-ZSH
-
-# Ensure zsh sessions load it
-RUN printf "%s\n" '[ -r /etc/zsh/modules-init.zsh ] && source /etc/zsh/modules-init.zsh' >> /etc/zsh/zshrc
 """.lstrip()
 
 
@@ -130,7 +108,7 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	commands += install_root_tarball(image, root_version)
 	commands += install_meson(meson_version)
 	commands += install_novnc(novnc_version)
-	if image != "archlinux":
+	if image != "archlinux" and image != "debian":
 		commands += install_g4installer(0, geant4_version)
 		commands += install_geant4(geant4_version)
 

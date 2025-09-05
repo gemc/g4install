@@ -1,5 +1,21 @@
 #!/bin/sh
 
+
+if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; then
+  for f in \
+    /usr/share/lmod/lmod/init/zsh \
+    /usr/share/lmod/lmod/init/sh \
+    /etc/profile.d/lmod.sh \
+    /usr/share/Modules/init/zsh \
+    /usr/share/Modules/init/sh \
+    /etc/profile.d/modules.sh \
+    /usr/share/modules/init/zsh \
+    /usr/share/modules/init/sh
+  do
+    [[ -r "$f" ]] && source "$f" && break
+  done
+fi
+
 # If sourced from zsh, enable zsh options; if bash, do bash setup.
 if [ -n "${ZSH_VERSION:-}" ]; then
   # --- Zsh setup (native autolist/autocomplete) ---
@@ -10,19 +26,6 @@ if [ -n "${ZSH_VERSION:-}" ]; then
   setopt COMPLETE_IN_WORD
   autoload -Uz compinit && compinit
 else
-  # --- Bash setup ---
-  # Load Environment Modules if available
-  if [ -f /usr/share/Modules/init/bash ]; then
-    # RHEL/Fedora style
-    # shellcheck disable=SC1091
-    source /usr/share/Modules/init/bash
-  elif [ -f /usr/share/modules/init/bash ]; then
-    # Debian/Ubuntu style
-    # shellcheck disable=SC1091
-    source /usr/share/modules/init/bash
-  elif [ -f /etc/profile.d/modules.sh ]; then
- 	source /etc/profile.d/modules.sh
-  fi
 
   # Enable bash-completion if installed (common paths across distros)
   for f in \
