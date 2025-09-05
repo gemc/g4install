@@ -75,7 +75,7 @@ def install_g4installer(is_cvfms: bool, geant4_version: str) -> str:
 def install_geant4(version: str) -> str:
 	commands = f"\n# Install Geant4 {version}\n"
 	commands += f'RUN source {remote_setup_filename()} \\\n'
-	commands += f'    && install_geant4 {version}"\n'
+	commands += f'    && install_geant4 {version}\n'
 	return commands
 
 def install_additional_libraries(image: str, geant4_version: str, root_version: str, meson_version: str,
