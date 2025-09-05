@@ -14,10 +14,10 @@ if {[file exists $sim_home] && ![file isdirectory $sim_home]} {
 }
 
 # Create the directory if it doesn't exist
+warndir $env(SIM_HOME) "[osrelease] directory does not exist. Creating it. " warn
 if {![file isdirectory $sim_home]} {
     file mkdir $sim_home
 }
-
 
 # add the script installation directory to the PATH
 prepend-path PATH [home]/install

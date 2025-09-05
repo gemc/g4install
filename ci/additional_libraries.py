@@ -59,6 +59,34 @@ def install_novnc(novnc_ver: str) -> str:
 		f"    && git clone --depth=1 {websockify_url} /opt/novnc/utils/websockify\n"
 	)
 
+def install_lmod_on_arch() -> str:
+	return r"""
+	# Install Lmod on Arch Linux
+	RUN pacman -Syu --noconfirm \
+	    && pacman -S --noconfirm --needed base-devel git sudo zsh \
+	    && useradd -m -G wheel -s /bin/bash build \
+	    && echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-build \
+	    && chmod 440 /etc/sudoers.d/99-build \
+	    && su - build -c 'git clone https://aur.archlinux.org/lmod.git && cd lmod && makepkg -si --noconfirm --needed' \
+	    && mkdir -p /etc/zsh \
+	    && cat >/etc/zsh/modules-init.zsh <<'ZSH' \
+	# modules-init.zsh — prefer Lmod, fall back to Environment Modules
+	# Source from /etc/zsh/zshrc or your ~/.zshrc
+	if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; then
+	  for f in \
+	    /usr/share/lmod/lmod/init/zsh \
+	    /etc/profile.d/lmod.sh \
+	    /usr/share/Modules/init/zsh \
+	    /etc/profile.d/modules.sh \
+	    /usr/share/modules/init/zsh
+	  do
+	    [[ -r "$f" ]] && source "$f" && break
+	  done
+	fi
+	ZSH
+	    && printf "%s\n" '[ -r /etc/zsh/modules-init.zsh ] && source /etc/zsh/modules-init.zsh' >> /etc/zsh/zshrc
+	""".lstrip()
+
 # adding UPSTREAM_REV (which changes with every commit to g4install) so that this
 # function is never cached by docker
 def install_g4installer(is_cvfms: bool, geant4_version: str) -> str:
@@ -82,6 +110,8 @@ def install_geant4(version: str) -> str:
 def install_additional_libraries(image: str, geant4_version: str, root_version: str, meson_version: str,
                                  novnc_version: str) -> str:
 	commands = '\n'
+	if image == "archlinux":
+		commands += install_lmod_on_arch()
 	commands += '# Install additional libraries\n'
 	commands += f'# ROOT version: {root_version}\n'
 	commands += f'# Meson version: {meson_version}\n'
