@@ -1,0 +1,33 @@
+#!/bin/zsh -i
+# shell has to be interactive to load modules below
+
+# note: releases are now gihutb releases: https://github.com/apache/xerces-c/tags
+# the direct link points to https://github.com/apache/xerces-c/archive/refs/tags/v$version.tar.gz
+
+# if the environment variables XERCESCROOT and XERCESC_VERSION are not set, exit
+if [[ -z "$XERCESCROOT" || -z "$XERCESC_VERSION" ]]; then
+	echo "$red > XERCESCROOT or XERCESC_VERSION environment variables are not set. Exiting.$reset"
+	exit 1
+fi
+
+what="xercesc"
+what_version="$XERCESC_VERSION"
+base_dir="$XERCESCROOT"
+source_dir=$XERCESCROOT/source
+build_dir=$XERCESCROOT/build
+cmake_options="-Wno-dev -DBUILD_STATIC_LIBS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+grepo="https://github.com/apache/xerces-c/archive/refs/tags/v$what_version.tar.gz"
+tar_strip=1  # tarball number of subdirs to strip
+
+source "$(dirname "$(readlink -f "$0")")"/functions.zsh
+log_general "$what" "$what_version" "$grepo" "$base_dir"
+
+unpack_source_in_directory_from_url "$grepo" "$source_dir" "$tar_strip"
+
+cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
+
+echo "$magenta > $what installation completed.$reset"
+module test .xercesc/$what_version
+exit $?
+
+

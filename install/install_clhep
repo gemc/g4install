@@ -1,0 +1,28 @@
+#!/bin/zsh -i
+# shell has to be interactive to load modules below
+
+# if the environment variables CLHEP_BASE_DIR and CLHEP_VERSION are not set, exit
+if [[ -z "$CLHEP_BASE_DIR" || -z "$CLHEP_VERSION" ]]; then
+	echo "$red > CLHEP_BASE_DIR or CLHEP_VERSION environment variables are not set. Exiting.$reset"
+	exit 1
+fi
+
+what="clhep"
+what_version="$CLHEP_VERSION"
+base_dir="$CLHEP_BASE_DIR"
+source_dir=$CLHEP_BASE_DIR/../source
+build_dir=$CLHEP_BASE_DIR/../build
+cmake_options="-Wno-dev -DBUILD_STATIC_LIBS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+grepo="https://proj-clhep.web.cern.ch/proj-clhep/dist1/clhep-$what_version.tgz"
+tar_strip=2  # tarball number of subdirs to strip
+
+source "$(dirname "$(readlink -f "$0")")"/functions.zsh
+log_general "$what" "$what_version" "$grepo" "$base_dir"
+
+unpack_source_in_directory_from_url "$grepo" "$source_dir" "$tar_strip"
+
+cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
+
+echo "$magenta > $what installation completed.$reset"
+module test .clhep/$what_version
+exit $?

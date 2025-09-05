@@ -60,19 +60,6 @@ def install_novnc(novnc_ver: str) -> str:
 	)
 
 
-def install_additional_libraries(image: str, root_version: str, meson_version: str,
-                                 novnc_version: str) -> str:
-	commands = '\n'
-	commands += '# Install additional libraries\n'
-	commands += f'# ROOT version: {root_version}\n'
-	commands += f'# Meson version: {meson_version}\n'
-	commands += f'# noVNC version: {novnc_version}\n'
-	commands += install_root_tarball(image, root_version)
-	commands += install_meson(meson_version)
-	commands += install_novnc(novnc_version)
-
-	return commands
-
 def install_g4installer(is_cvfms: bool) -> str:
 	g4install = sim_home(is_cvfms)
 	commands = ''
@@ -82,6 +69,28 @@ def install_g4installer(is_cvfms: bool) -> str:
 	commands += f'    && echo "module use {g4install}/modules" >> {remote_setup_filename()}\\\n'
 	commands += f'    && echo "module load geant4" >> {remote_setup_filename()}\n'
 	return commands
+
+def install_geant4(version: str) -> str:
+	commands = f"\n# Install Geant4 {version}\n"
+	commands += f'RUN install_geant4 {version} \n'
+	return commands
+
+def install_additional_libraries(image: str, geant4_version: str, root_version: str, meson_version: str,
+                                 novnc_version: str) -> str:
+	commands = '\n'
+	commands += '# Install additional libraries\n'
+	commands += f'# ROOT version: {root_version}\n'
+	commands += f'# Meson version: {meson_version}\n'
+	commands += f'# noVNC version: {novnc_version}\n'
+	commands += install_root_tarball(image, root_version)
+	commands += install_meson(meson_version)
+	commands += install_novnc(novnc_version)
+	commands += install_g4installer(0)
+	# commands += install_geant4(geant4_version)
+
+	return commands
+
+
 
 def main():
 	parser = argparse.ArgumentParser(
@@ -104,11 +113,14 @@ def main():
 		"--novnc-version", default="v1.6.0",
 		help="Version of noVNC to install (default: v1.6.0)"
 	)
-
+	parser.add_argument(
+		"--geant4-version", default="11.3.2",
+		help="Version of Geant4 to install (default: 11.3.2)"
+	)
 	args = parser.parse_args()
 	is_valid_image(args.image)
 
-	commands = install_additional_libraries(args.image, args.root_version, args.meson_version,
+	commands = install_additional_libraries(args.image, args.geant4_version, args.root_version, args.meson_version,
 	                                        args.novnc_version)
 	print(commands)
 

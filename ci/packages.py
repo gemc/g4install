@@ -55,7 +55,7 @@ pkg_sections = {
 	},
 	# vnc: use tigervnc + python-websockify; we’ll fetch noVNC from GitHub
 	"vnc":            {
-		"fedora":    ["xterm", "x11vnc", "openbox", "lxqt-panel", "dejavu-sans-mono-fonts"],
+		"fedora":    ["xterm", "x11vnc", "openbox", "tint2", "dejavu-sans-mono-fonts"],
 		"debian":    ["xterm", "x11vnc", "openbox", "tint2", "dbus-x11", "fonts-dejavu-core"],
 		"archlinux": ["xterm", "tigervnc"],
 	},
@@ -90,6 +90,17 @@ def debian_adjustments(pkgs: list[str]) -> list[str]:
 	return out
 
 
+def fedora_adjustments(pkgs: list[str]) -> list[str]:
+	# replace tint2 with lxqt-panel (for alma -> fedora)
+	rep = {
+		"tint2": "lxqt-panel"
+	}
+	out = []
+	for p in pkgs:
+		out.append(rep.get(p, p))
+	return out
+
+
 def packages_to_be_installed(image: str) -> str:
 	family = map_family(image)  # e.g., 'debian' (for ubuntu), 'fedora', 'arch'
 
@@ -100,6 +111,9 @@ def packages_to_be_installed(image: str) -> str:
 	# Debian needs Qt6 name tweaks (only when the actual base is debian)
 	if image == "debian":
 		pkgs = debian_adjustments(pkgs)
+
+	if image == "fedora":
+		pkgs = fedora_adjustments(pkgs)
 
 	# De-dupe but KEEP section order
 	pkgs = unique_preserve_order(pkgs)

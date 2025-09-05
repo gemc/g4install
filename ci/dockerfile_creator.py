@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 
-from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, remote_novnc_startup_script, remote_novnc_startup_dir
+from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, \
+	remote_novnc_startup_script, remote_novnc_startup_dir
 from packages import packages_install_command
-from additional_libraries import install_additional_libraries, install_g4installer
+from additional_libraries import install_additional_libraries
 
 cleanup_string_by_family = {
 	"fedora":    (
@@ -36,7 +37,7 @@ def docker_header(image: str, tag: str) -> str:
 	return commands
 
 
-def copy_setup_file(image:str) -> str:
+def copy_setup_file(image: str) -> str:
 	local_setup_file = local_setup_filename()
 	remote_setup_file = remote_setup_filename()
 
@@ -52,6 +53,7 @@ def copy_setup_file(image:str) -> str:
 		commands += f"COPY ci/novnc/debian.sh {remote_novnc_startup_dir()}/debian.sh\n"
 
 	return commands
+
 
 def install_jlab_ca(image: str) -> str:
 	family = map_family(image)
@@ -93,8 +95,8 @@ def additional_preamble(image: str) -> str:
 	return commands
 
 
-
-def create_dockerfile(image: str, base: str, root_version: str, meson_version: str, novnc_version: str) -> str:
+def create_dockerfile(image: str, base: str, root_version: str, meson_version: str,
+                      novnc_version: str) -> str:
 	commands = ""
 
 	commands += docker_header(image, base)
@@ -104,7 +106,6 @@ def create_dockerfile(image: str, base: str, root_version: str, meson_version: s
 	commands += packages_install_command(image)
 	commands += cleanup_string_by_family[map_family(image)]
 	commands += install_additional_libraries(image, root_version, meson_version, novnc_version)
-	commands += install_g4installer(0)
 
 	return commands
 
@@ -135,12 +136,20 @@ def main():
 		"--novnc-version", default="v1.6.0",
 		help="Version of noVNC to install (default: v1.6.0)"
 	)
-
+	parser.add_argument(
+		"--geant4-version", default="11.3.2",
+		help="Version of Geant4 to install (default: 11.3.2)"
+	)
 	args = parser.parse_args()
 	is_valid_image(args.image)
 
-	dockerfile = create_dockerfile(args.image, args.tag, args.root_version, args.meson_version, args.novnc_version)
+	dockerfile = create_dockerfile(args.image,
+	                               args.geant4_version,
+	                               args.root_version,
+	                               args.meson_version,
+	                               args.novnc_version)
 	print(dockerfile)
+
 
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
