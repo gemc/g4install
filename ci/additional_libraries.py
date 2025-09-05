@@ -79,7 +79,7 @@ def install_g4installer(is_cvfms: bool) -> str:
 	commands += f'RUN mkdir -p {g4install} \\\n'
 	commands += f'    && cd {g4install} \\\n'
 	commands += f'    && git clone --depth=1 https://github.com/gemc/g4install . \\\n'
-	commands += f'    && echo "module use {g4install}/modules" >> {remote_setup_filename()}\n'
+	commands += f'    && echo "module use {g4install}/modules" >> {remote_setup_filename()}\\\n'
 	commands += f'    && echo "module load geant4" >> {remote_setup_filename()}\n'
 	return commands
 
