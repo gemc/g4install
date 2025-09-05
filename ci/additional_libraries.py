@@ -59,15 +59,21 @@ def install_novnc(novnc_ver: str) -> str:
 		f"    && git clone --depth=1 {websockify_url} /opt/novnc/utils/websockify\n"
 	)
 
-
-def install_g4installer(is_cvfms: bool) -> str:
+# adding UPSTREAM_REV (which changes with every commit to g4install) so that this
+# function is never cached by docker
+def install_g4installer(is_cvfms: bool, geant4_version: str) -> str:
 	g4install = sim_home(is_cvfms)
 	commands = ''
+	commands += 'ARG UPSTREAM_REV=unknown'
 	commands += f'RUN mkdir -p {g4install} \\\n'
 	commands += f'    && cd {g4install} \\\n'
 	commands += f'    && git clone --depth=1 https://github.com/gemc/g4install . \\\n'
 	commands += f'    && echo "module use {g4install}/modules" >> {remote_setup_filename()}\\\n'
-	commands += f'    && echo "module load geant4" >> {remote_setup_filename()}\n'
+	commands += f'    && echo "module load geant4 {geant4_version}" >> {remote_setup_filename()}\\\n'
+	commands += f'    && module use {g4install}/modules \\\n'
+	commands += '     && module load sim_system \\\n'
+	commands += '     && mkdir -p $SIM_HOME  \\\n'
+	commands += '     && echo "refresh=$UPSTREAM_REV" \n'
 	return commands
 
 def install_geant4(version: str) -> str:
@@ -85,7 +91,7 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	commands += install_root_tarball(image, root_version)
 	commands += install_meson(meson_version)
 	commands += install_novnc(novnc_version)
-	commands += install_g4installer(0)
+	commands += install_g4installer(0, geant4_version)
 	# commands += install_geant4(geant4_version)
 
 	return commands

@@ -89,11 +89,16 @@ jobs:
           esac
           echo "plats=$PLATS" >> "$GITHUB_OUTPUT"
 
+      - name: Get upstream commit
+        run: echo "UPSTREAM_REV=$(git ls-remote https://github.com/gemc/g4install HEAD | cut -f1)" >> $GITHUB_ENV
+
       # Multi-arch when pushing; single-arch and load locally on PRs
       - name: Build and Push (release/merge)
         if: ${{ github.event_name != 'pull_request' }}
         uses: docker/build-push-action@v5
         with:
+          build-args: |
+            UPSTREAM_REV=${{ env.UPSTREAM_REV }}
           context: .
           file: ./Dockerfile.generated
           platforms: ${{ steps.plats.outputs.plats }}
@@ -119,7 +124,7 @@ jobs:
             mkdir -p "$(dirname "$SUMMARY_OUT")"
             echo "GITHUB_STEP_SUMMARY not set; writing to $SUMMARY_OUT"
           fi
-                    
+          
           {
             echo ""
             echo ""

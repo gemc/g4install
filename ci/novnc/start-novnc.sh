@@ -5,15 +5,16 @@
 # - Starts a VNC server (per-distro implementation)
 # - Starts the noVNC web proxy (novnc_proxy)
 #
-# Per-distro overrides:
-#   - distro_resolve_novnc_proxy() : set NOVNC_PROXY_BIN or fallback path
-#   - distro_start_vnc_server()    : start x11vnc (Fedora/Deb/Ubuntu) or x0vncserver (Arch)
-#   - distro_pretty_desktop()      : optional extra prettification
-#
-# These are sourced from /usr/local/lib/start-novnc/<family>.sh, where
-# <family> is "fedora", "debian" (covers ubuntu+debian), or "arch".
+# Per-distro overrides (sourced from /usr/local/lib/start-novnc/<family>.sh):
+#   - distro_resolve_novnc_proxy(): set NOVNC_PROXY_BIN or fallback path
+#   - distro_start_vnc_server():    start x11vnc (Fedora/Deb/Ubuntu) or x0vncserver (Arch)
+#   - distro_pretty_desktop():      optional extra prettification
 
 set -Eeuo pipefail
+
+# ---- show where/why it failed instead of silently exiting under set -e ----
+trap 'code=$?; echo "[start-novnc] ERROR at line $LINENO: $BASH_COMMAND (exit $code)" >&2; exit $code' ERR
+: "${DEBUG:=0}"; [ "$DEBUG" = "1" ] && set -x
 
 # --------------------- Config knobs (env-tweakable) ---------------------
 : "${DISPLAY:=:1}"                  # Xvfb display number
@@ -41,7 +42,7 @@ die() { printf '[start-novnc] ERROR: %s\n' "$*" >&2; exit 1; }
 # Many distro profile scripts read unset vars (HISTCONTROL), so disable nounset around them.
 _had_u=0; case $- in *u*) _had_u=1; set +u;; esac
 for f in /etc/profile /etc/bash.bashrc /etc/bashrc /etc/profile.d/local_g4setup.sh; do
-  [ -r "$f" ] && . "$f"
+  [ -r "$f" ] && . "$f" || true
 done
 [ "$_had_u" -eq 1 ] && set -u
 
@@ -96,29 +97,30 @@ XRS
 # Start Xvfb display server
 start_xvfb() {
   mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
-  if ! pgrep -x "$XVFB_BIN" >/dev/null 2>&1; then
-    log "Launching Xvfb on ${DISPLAY} (${GEOMETRY}x${DEPTH}, dpi ${DPI})"
-    "$XVFB_BIN" "$DISPLAY" -screen 0 "${GEOMETRY}x${DEPTH}" -dpi "${DPI}" \
-      +extension RANDR +extension GLX +iglx &
-  fi
+  log "Launching Xvfb on ${DISPLAY} (${GEOMETRY}x${DEPTH}, dpi ${DPI})"
+  "$XVFB_BIN" "$DISPLAY" -screen 0 "${GEOMETRY}x${DEPTH}" -dpi "${DPI}" \
+    +extension RANDR +extension GLX +iglx &
   wait_for_x_socket
 }
 
 # Start a minimal WM/panel if available (prettier than bare Xvfb)
 start_pretty_desktop() {
   # Start a basic WM if present (order of preference)
-  for wm in tint2 lxqt-panel xfce4-panel; do
+  for wm in openbox-session openbox startlxqt startxfce4 xfwm4 fluxbox; do
     if command -v "$wm" >/dev/null 2>&1; then
       log "Starting window manager: $wm"
       DISPLAY="$DISPLAY" bash -lc "$wm" >/dev/null 2>&1 &
       break
     fi
   done
-  # Start a simple panel if present
-  if command -v tint2 >/dev/null 2>&1; then
-    log "Starting panel: tint2"
-    DISPLAY="$DISPLAY" tint2 >/dev/null 2>&1 &
-  fi
+  # Start a simple panel if present (try tint2 first, then lxqt/xfce panels)
+  for panel in tint2 lxqt-panel xfce4-panel; do
+    if command -v "$panel" >/dev/null 2>&1; then
+      log "Starting panel: $panel"
+      DISPLAY="$DISPLAY" "$panel" >/dev/null 2>&1 &
+      break
+    fi
+  done
   apply_xterm_theme
   # Optional autostart terminal
   if [ -n "${AUTOSTART:-}" ] && command -v xterm >/dev/null 2>&1; then
@@ -162,29 +164,23 @@ detect_family() {
   esac
 }
 
-# Load the shim providing:
-#   - distro_resolve_novnc_proxy
-#   - distro_start_vnc_server
-#   - distro_pretty_desktop   (optional)
+# Load the shim providing optional overrides.
 load_shim() {
   local fam="$1" f="/usr/local/lib/start-novnc/${fam}.sh"
-  [ -r "$f" ] && . "$f"
+  [ -r "$f" ] && . "$f" || true
 }
 
 # Default implementations (used if shim doesn’t override)
 distro_resolve_novnc_proxy() {
   if command -v "$NOVNC_PROXY_BIN" >/dev/null 2>&1; then return 0; fi
-  if [ -x /usr/share/novnc/utils/novnc_proxy ]; then
-    NOVNC_PROXY_BIN=/usr/share/novnc/utils/novnc_proxy; return 0
-  fi
-  if [ -x /opt/novnc/utils/novnc_proxy ]; then
-    NOVNC_PROXY_BIN=/opt/novnc/utils/novnc_proxy; return 0
-  fi
-  die "novnc_proxy not found (install noVNC or vendor it into /opt/novnc)"
+  if [ -x /usr/share/novnc/utils/novnc_proxy ]; then NOVNC_PROXY_BIN=/usr/share/novnc/utils/novnc_proxy; return 0; fi
+  if [ -x /opt/novnc/utils/novnc_proxy ]; then NOVNC_PROXY_BIN=/opt/novnc/utils/novnc_proxy; return 0; fi
+  die "novnc_proxy not found. Install noVNC (package) or vendor it under /opt/novnc"
 }
 
 # Generic x11vnc server (Fedora/Debian families)
 distro_start_vnc_server() {
+  command -v x11vnc >/dev/null 2>&1 || die "x11vnc not installed"
   local bind_opt="-localhost"
   [ "$VNC_BIND" != "localhost" ] && bind_opt=""
   local pass_opt="-nopw"
@@ -193,7 +189,7 @@ distro_start_vnc_server() {
     x11vnc -storepasswd "$X11VNC_PASSWORD" "$passfile"
     pass_opt="-rfbauth $passfile"
   fi
-  if ! pgrep -x x11vnc >/dev/null 2>&1; then
+  if ! pgrep -x x11vnc >/dev/null 2}&1; then
     log "Launching x11vnc on ${VNC_BIND}:${VNC_PORT}"
     x11vnc -display "$DISPLAY" -rfbport "$VNC_PORT" $bind_opt -forever -shared $pass_opt -bg -quiet
   fi
@@ -204,6 +200,7 @@ distro_pretty_desktop() { :; }
 
 # --------------------- Main --------------------------------------------
 main() {
+  log "Launcher starting…"
   local fam; fam="$(detect_family)"
   load_shim "$fam"
 
@@ -211,7 +208,10 @@ main() {
   start_pretty_desktop
   distro_pretty_desktop
   ensure_novnc_index
-  distro_resolve_novnc_proxy
+
+  distro_start_vnc_server        # ensure VNC backend is up
+  distro_resolve_novnc_proxy     # locate novnc_proxy or die
+
   print_urls
   exec "$NOVNC_PROXY_BIN" --vnc "localhost:${VNC_PORT}" --listen "${NOVNC_LISTEN}:${NOVNC_PORT}"
 }

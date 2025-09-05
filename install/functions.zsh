@@ -49,33 +49,6 @@ dir_remove_and_create() {
 	mkdir -p "$dir"
 }
 
-unpack_source_in_directory_from_jlab_repo() {
-	url=$repo/$1
-	dir=$2
-	tar_strip=$3
-	filename=$(basename "$url")
-
-	echo
-	echo " > unpack_source_in_directory_from_jlab_repo: "
-	echo " > url: $url"
-	echo " > dir: $dir"
-	echo " > tar_strip: $tar_strip"
-	echo " > filename: $filename"
-	echo
-
-	dir_remove_and_create "$dir"
-	cd "$dir" || whine_and_quit "cd $dir"
-
-	echo "$magenta > Fetching source from $url onto $filename$reset"
-	rm -f "$filename"
-	curl -sSL "$url" --output "$filename"
-
-	echo "$magenta > Unpacking $filename in $dir$reset"
-	echo
-
-	tar -zxpf "$filename" --strip-components="$tar_strip"
-	rm -f "$filename"
-}
 
 # run tar options if not macos, otherwise use gnutar
 gnutar() {
