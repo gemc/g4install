@@ -51,7 +51,7 @@ pkg_sections = {
 	"utilities_2":    {
 		"fedora":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
 		"debian":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
-		"archlinux": ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
+		"archlinux": ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch", "bash-completion"],
 	},
 	# vnc: use tigervnc + python-websockify; we’ll fetch noVNC from GitHub
 	"vnc":            {
@@ -61,7 +61,7 @@ pkg_sections = {
 	},
 	"qt6":            {
 		"fedora":    ["qt6-qtbase-devel"],
-		"debian":    ["qt6-base-dev", "libqt6opengl6t64", "libqt6openglwidgets6t64"],
+		"debian":    ["qt6-base-dev", "libqt6opengl6t64", "libqt6openglwidgets6t64", "qt6-base-dev-tools"],
 		"archlinux": ["qt6-base"],
 	},
 	"root":           {
