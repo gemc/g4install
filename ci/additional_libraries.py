@@ -69,11 +69,7 @@ def install_g4installer(is_cvfms: bool, geant4_version: str) -> str:
 	commands += f'    && cd {g4install} \\\n'
 	commands += f'    && git clone --depth=1 https://github.com/gemc/g4install . \\\n'
 	commands += f'    && echo "module use {g4install}/modules" >> {remote_setup_filename()}\\\n'
-	commands += f'    && echo "module load geant4 {geant4_version}" >> {remote_setup_filename()}\\\n'
-	commands += f'    && module use {g4install}/modules \\\n'
-	commands += '     && module load sim_system \\\n'
-	commands += '     && mkdir -p $SIM_HOME  \\\n'
-	commands += '     && echo "refresh=$UPSTREAM_REV" \n'
+	commands += f'    && echo "module load geant4 {geant4_version}" >> {remote_setup_filename()}\n'
 	return commands
 
 def install_geant4(version: str) -> str:
