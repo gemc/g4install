@@ -1,10 +1,17 @@
 #!/bin/zsh
 
-# on fedora and ubuntu installation dir is different for modules
-# also checking for container env setup in /app
-[[ -f /usr/share/Modules/init/zsh ]] && . /usr/share/Modules/init/zsh
-[[ -f /usr/share/modules/init/zsh ]] && . /usr/share/modules/init/zsh
-
+# on distros installation module dir is 
+if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; then
+  for f in \
+    /usr/share/Modules/init/zsh \
+    /usr/share/modules/init/zsh \
+    /usr/share/lmod/lmod/init/zsh \
+    /etc/profile.d/lmod.zsh \
+    /etc/profile.d/modules.zsh
+  do
+    [[ -r "$f" ]] && source "$f" && break
+  done
+fi
 
 red=$(   tput setaf 1)
 green=$( tput setaf 2)
