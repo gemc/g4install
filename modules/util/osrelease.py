@@ -1,38 +1,133 @@
-#!/usr/bin/python3
-
+#!/usr/bin/env python3
 import os
 import platform
+import re
+import shutil
+import subprocess
 
-if platform.system() == 'Darwin':
-    compiler = os.popen('clang --version').readlines()[0].split()[3]
-    compiler = 'clang' + compiler.split('.')[0]
-    os_version = 'macosx' + list(platform.mac_ver()).pop(0).split('.').pop(0)
+def run(cmd):
+    try:
+        out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True)
+        return out.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return ""
 
-elif platform.system() == 'Linux':
+def parse_major(ver: str) -> str:
+    """
+    Return the leading integer portion of a version string (before the first dot).
+    e.g. "24.04" -> "24", "9" -> "9", "" -> "".
+    """
+    if not ver:
+        return ""
+    m = re.search(r"\d+", ver)
+    return m.group(0) if m else ""
 
-    compiler = os.popen('gcc --version').readlines()[0].split()[2]
-    compiler = 'gcc' + compiler.split('.').pop(0)
+def read_os_release():
+    """
+    Parse /etc/os-release into a dict. Returns {} if not present.
+    """
+    path = "/etc/os-release"
+    data = {}
+    if os.path.exists(path):
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                # Strip surrounding quotes if present
+                v = v.strip().strip('"').strip("'")
+                data[k] = v
+    return data
 
-    if os.path.exists('/etc/redhat-release'):
-        with open('/etc/redhat-release') as f:
-            row = f.read().strip().split()
-            if row[0] == 'Fedora' or row[0] == 'AlmaLinux':
-                os_version = row[0].lower() + row[2].split('.').pop(0)
-            elif row[0] == 'Red' and row[1] == 'Hat' and row[2] == 'Enterprise':
-                os_version = 'rhel' + row[len(row)-2].split('.').pop(0)
-            else:
-                os_version = row[0].lower() + row[3].split('.').pop(0)
+def linux_os_version():
+    osr = read_os_release()
+    # Fallbacks if /etc/os-release is missing (rare)
+    if not osr:
+        # Try Red Hat style
+        rh_path = "/etc/redhat-release"
+        if os.path.exists(rh_path):
+            txt = open(rh_path).read().strip()
+            # Examples:
+            # "Fedora release 40 (Forty)"
+            # "AlmaLinux release 9.4 (Seafoam Ocelot)"
+            # "Red Hat Enterprise Linux release 9.3 (Plow)"
+            low = txt.lower()
+            if low.startswith("fedora"):
+                maj = parse_major(txt)
+                return f"fedora{maj}"
+            if "almalinux" in low:
+                maj = parse_major(txt)
+                return f"almalinux{maj}"
+            if low.startswith("red hat enterprise"):
+                maj = parse_major(txt)
+                return f"rhel{maj}"
+            # Generic fallback
+            maj = parse_major(txt)
+            base = txt.split()[0].lower()
+            return f"{base}{maj}" if maj else base
+        raise ValueError("Unsupported linux version: missing /etc/os-release")
 
-    elif os.path.exists('/etc/os-release'):
-        with open('/etc/os-release') as f:
-            row = f.read().strip().split()
-            vers = [s for s in row if "VERSION_ID=" in s]
-            os_version = 'ubuntu' + vers[0].split('="')[1].split('.')[0]
+    id_ = osr.get("ID", "").lower()
+    ver = osr.get("VERSION_ID", "")
+    maj = parse_major(ver)
+
+    # Normalize well-known distros
+    if id_ in {"ubuntu", "debian", "fedora", "almalinux", "rhel", "centos", "rocky"}:
+        return f"{id_}{maj}" if maj else id_
+    if id_ == "arch":
+        # Arch is rolling; usually no VERSION_ID. Keep it simple.
+        return "arch"
+    # Some derivatives may not be directly listed above:
+    # Try to use ID with major if we have one, else just ID.
+    return f"{id_}{maj}" if maj else id_
+
+def compiler_tag(system_name: str) -> str:
+    """
+    macOS: always use clang major version.
+    Linux: prefer gcc major if available, else clang major.
+    """
+    if system_name == "Darwin":
+        out = run(["clang", "--version"])
+        # Usually: "Apple clang version 15.0.0 (clang-1500.1.0.2.5)"
+        m = re.search(r"\bclang[^ ]*\s+version\s+(\d+)", out)
+        major = m.group(1) if m else ""
+        return f"clang{major}" if major else "clang"
     else:
-        raise ValueError('Unsupported linux version.')
-else:
-    raise ValueError('Unsupported platform: '+platform.system())
+        if shutil.which("gcc"):
+            out = run(["gcc", "--version"])
+            # Usually: "gcc (GCC) 14.2.1 20240805 (Red Hat 14.2.1-1)"
+            m = re.search(r"\bgcc.*\)\s+(\d+)", out, re.IGNORECASE) or \
+                re.search(r"\bGCC\)?\s+(\d+)", out)
+            # Fallback: first number in output
+            if not m:
+                m = re.search(r"\b(\d+)\.\d+", out)
+            major = m.group(1) if m else ""
+            return f"gcc{major}" if major else "gcc"
+        elif shutil.which("clang"):
+            out = run(["clang", "--version"])
+            m = re.search(r"\bclang[^ ]*\s+version\s+(\d+)", out)
+            major = m.group(1) if m else ""
+            return f"clang{major}" if major else "clang"
+        else:
+            # Last resort: unknown compiler
+            return "compiler"
 
-print('%s-%s'%(os_version,compiler))
+def main():
+    sysname = platform.system()
+    if sysname == "Darwin":
+        # macOS: "macosx<major>"
+        mac_ver = platform.mac_ver()[0]  # e.g. "14.5"
+        mac_major = mac_ver.split(".")[0] if mac_ver else ""
+        os_version = f"macosx{mac_major}" if mac_major else "macosx"
+        comp = compiler_tag(sysname)
+    elif sysname == "Linux":
+        os_version = linux_os_version()
+        comp = compiler_tag(sysname)
+    else:
+        raise ValueError(f"Unsupported platform: {sysname}")
 
+    print(f"{os_version}-{comp}")
 
+if __name__ == "__main__":
+    main()

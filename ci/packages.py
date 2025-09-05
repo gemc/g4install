@@ -7,33 +7,33 @@ from functions import map_family, is_valid_image, unique_preserve_order
 pkg_sections = {
 	"cxx_essentials": {
 		"fedora":    ["git", "make", "cmake", "gcc-c++", "gdb", "valgrind"],
-		"ubuntu":    ["git", "make", "cmake", "g++", "gdb", "valgrind"],
+		"debian":    ["git", "make", "cmake", "g++", "gdb", "valgrind"],
 		"archlinux": ["git", "make", "cmake", "gcc", "gdb", "valgrind"],
 	},
 	"expat":          {
 		"fedora":    ["expat-devel"],
-		"ubuntu":    ["libexpat1-dev"],
+		"debian":    ["libexpat1-dev"],
 		"archlinux": ["expat"],
 	},
 	"sql":            {
 		"fedora":    ["mariadb-devel", "sqlite-devel"],
-		"ubuntu":    ["libmysqlclient-dev", "libsqlite3-dev"],
+		"debian":    ["libmysqlclient-dev", "libsqlite3-dev"],
 		"archlinux": ["mariadb", "mariadb-libs", "sqlite"],
 	},
 	"python_ninja":   {
 		"fedora":    ["python3-devel", "ninja-build"],
-		"ubuntu":    ["python3-dev", "ninja-build"],
+		"debian":    ["python3-dev", "ninja-build"],
 		"archlinux": ["python", "python-pip", "ninja"],
 	},
 	"x11_1":          {
 		"fedora":    ["mesa-libGLU-devel", "libX11-devel", "libXpm-devel", "libXft-devel"],
-		"ubuntu":    ["libglu1-mesa-dev", "libx11-dev", "libxpm-dev", "libxft-dev"],
+		"debian":    ["libglu1-mesa-dev", "libx11-dev", "libxpm-dev", "libxft-dev"],
 		"archlinux": ["mesa", "glu", "libx11", "libxpm", "libxft"],
 	},
 	"x11_2":          {
 		"fedora":    ["libXt-devel", "libXmu-devel", "libXrender-devel", "xorg-x11-server-Xvfb",
 		              "xrandr"],
-		"ubuntu":    ["libxt-dev", "libxmu-dev", "libxrender-dev", "xvfb",
+		"debian":    ["libxt-dev", "libxmu-dev", "libxrender-dev", "xvfb",
 		              "x11-xserver-utils"],
 		"archlinux": ["libxt", "libxmu", "libxrender", "xorg-server-xvfb",
 		              "xorg-xrandr"],
@@ -42,7 +42,7 @@ pkg_sections = {
 	"utilities_1":    {
 		"fedora":    ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
 		              "hostname", "gedit", "environment-modules", "pv", "which"],
-		"ubuntu":    ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
+		"debian":    ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
 		              "hostname", "gedit", "environment-modules", "pv", "which", "ca-certificates"],
 		"archlinux": ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
 		              "inetutils", "gedit", "pv", "which"],
@@ -50,28 +50,28 @@ pkg_sections = {
 	},
 	"utilities_2":    {
 		"fedora":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
-		"ubuntu":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
+		"debian":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
 		"archlinux": ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
 	},
 	# vnc: use tigervnc + python-websockify; we’ll fetch noVNC from GitHub
 	"vnc":            {
-		"fedora":    ["xterm", "x11vnc", "openbox", "tint2", "dejavu-sans-mono-fonts"],
-		"ubuntu":    ["xterm", "x11vnc", "openbox", "tint2", "dbus-x11", "fonts-dejavu-core"],
+		"fedora":    ["xterm", "x11vnc", "openbox", "lxqt-panel", "dejavu-sans-mono-fonts"],
+		"debian":    ["xterm", "x11vnc", "openbox", "tint2", "dbus-x11", "fonts-dejavu-core"],
 		"archlinux": ["xterm", "tigervnc"],
 	},
 	"qt6":            {
 		"fedora":    ["qt6-qtbase-devel"],
-		"ubuntu":    ["qt6-base-dev", "libqt6opengl6t64", "libqt6openglwidgets6t64"],
+		"debian":    ["qt6-base-dev", "libqt6opengl6t64", "libqt6openglwidgets6t64"],
 		"archlinux": ["qt6-base"],
 	},
 	"root":           {
 		"fedora":    ["root"],
-		"ubuntu":    [],
+		"debian":    [],
 		"archlinux": ["root"],
 	},
 	"sanitizers":     {
 		"fedora":    ["liblsan", "libasan", "libubsan", "libtsan", "tbb"],
-		"ubuntu":    ["liblsan0", "libasan8", "libubsan1", "libtsan2", "libtbb12"],
+		"debian":    ["liblsan0", "libasan8", "libubsan1", "libtsan2", "libtbb12"],
 		"archlinux": ["gcc-libs", "tbb"],
 	},
 }

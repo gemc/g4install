@@ -107,7 +107,7 @@ start_xvfb() {
 # Start a minimal WM/panel if available (prettier than bare Xvfb)
 start_pretty_desktop() {
   # Start a basic WM if present (order of preference)
-  for wm in openbox-session openbox startlxqt startxfce4 xfwm4 fluxbox; do
+  for wm in tint2 lxqt-panel xfce4-panel; do
     if command -v "$wm" >/dev/null 2>&1; then
       log "Starting window manager: $wm"
       DISPLAY="$DISPLAY" bash -lc "$wm" >/dev/null 2>&1 &
