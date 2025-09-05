@@ -64,7 +64,7 @@ def install_novnc(novnc_ver: str) -> str:
 def install_g4installer(is_cvfms: bool, geant4_version: str) -> str:
 	g4install = sim_home(is_cvfms)
 	commands = ''
-	commands += 'ARG UPSTREAM_REV=unknown'
+	commands += 'ARG UPSTREAM_REV=unknown\n'
 	commands += f'RUN mkdir -p {g4install} \\\n'
 	commands += f'    && cd {g4install} \\\n'
 	commands += f'    && git clone --depth=1 https://github.com/gemc/g4install . \\\n'
