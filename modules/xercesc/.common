@@ -1,6 +1,6 @@
 # Common modulefile
 
-conflict .xercesc
+conflict xercesc
 
 module-whatis c++ xml parser, https://xerces.apache.org
 source [file dirname $ModulesCurrentModulefile]/../util/functions.tcl

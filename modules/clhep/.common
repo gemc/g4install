@@ -1,6 +1,6 @@
 # Common modulefile
 
-conflict .clhep
+conflict clhep
 
 module-whatis A Class Library for High Energy Physics, https://proj-clhep.web.cern.ch/proj-clhep/
 source [file dirname $ModulesCurrentModulefile]/../util/functions.tcl

@@ -7,7 +7,7 @@ from functions import remote_setup_filename, curl_command, map_family, is_valid_
 def install_root_tarball(image: str, root_version: str) -> str:
 	# on fedora lines, we would install from dnf
 	family = map_family(image)
-	if family == "fedora":
+	if family == "fedora" or family == "archlinux":
 		return ""
 
 	# ubuntu
@@ -64,6 +64,7 @@ def install_novnc(novnc_ver: str) -> str:
 def install_g4installer(is_cvfms: bool, geant4_version: str) -> str:
 	g4install = sim_home(is_cvfms)
 	commands = ''
+	commands += '\n# Clone g4install\n'
 	commands += 'ARG UPSTREAM_REV=unknown\n'
 	commands += f'RUN mkdir -p {g4install} \\\n'
 	commands += f'    && cd {g4install} \\\n'
