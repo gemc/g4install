@@ -20,6 +20,8 @@ else
     # Debian/Ubuntu style
     # shellcheck disable=SC1091
     source /usr/share/modules/init/bash
+  elif [ -f /etc/profile.d/modules.sh ]; then
+ 	source /etc/profile.d/modules.sh
   fi
 
   # Enable bash-completion if installed (common paths across distros)

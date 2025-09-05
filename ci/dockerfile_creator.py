@@ -90,12 +90,14 @@ def additional_preamble(image: str) -> str:
 		commands += ""
 
 	elif family == "archlinux":
-		commands += "RUN pacman -Sy --noconfirm archlinux-keyring\n\n"
+		commands += "RUN pacman-key --init && pacman-key --populate\\\n"
+		commands += "    && pacman -Sy --noconfirm archlinux-keyring\n\n"
 
 	return commands
 
 
-def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: str, meson_version: str,
+def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: str,
+                      meson_version: str,
                       novnc_version: str) -> str:
 	commands = ""
 

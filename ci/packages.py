@@ -45,7 +45,7 @@ pkg_sections = {
 		"debian":    ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
 		              "hostname", "gedit", "environment-modules", "pv", "which", "ca-certificates"],
 		"archlinux": ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
-		              "inetutils", "gedit", "pv", "which"],
+		              "inetutils", "gedit", "pv", "which", "fakeroot"],
 
 	},
 	"utilities_2":    {
