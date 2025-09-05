@@ -105,7 +105,7 @@ start_xvfb() {
 
 # Start a minimal WM/panel if available (prettier than bare Xvfb)
 start_pretty_desktop() {
-  # Start a basic WM if present (order of preference)
+  # Window managers (first one found starts)
   for wm in openbox-session openbox startlxqt startxfce4 xfwm4 fluxbox; do
     if command -v "$wm" >/dev/null 2>&1; then
       log "Starting window manager: $wm"
@@ -113,7 +113,7 @@ start_pretty_desktop() {
       break
     fi
   done
-  # Start a simple panel if present (try tint2 first, then lxqt/xfce panels)
+  # Panels (optional, first one found)
   for panel in tint2 lxqt-panel xfce4-panel; do
     if command -v "$panel" >/dev/null 2>&1; then
       log "Starting panel: $panel"
@@ -122,12 +122,12 @@ start_pretty_desktop() {
     fi
   done
   apply_xterm_theme
-  # Optional autostart terminal
   if [ -n "${AUTOSTART:-}" ] && command -v xterm >/dev/null 2>&1; then
     log "Autostart: $AUTOSTART"
     DISPLAY="$DISPLAY" bash -lc "$AUTOSTART" >/dev/null 2>&1 &
   fi
 }
+
 
 # Ensure / points to vnc.html if NOVNC_ROOT exists
 ensure_novnc_index() {
@@ -178,6 +178,15 @@ distro_resolve_novnc_proxy() {
   die "novnc_proxy not found. Install noVNC (package) or vendor it under /opt/novnc"
 }
 
+wait_for_vnc() {
+  # Wait for localhost:$VNC_PORT to accept TCP connections (uses /dev/tcp)
+  for _ in {1..100}; do
+    (exec 3<>"/dev/tcp/127.0.0.1/${VNC_PORT}") >/dev/null 2>&1 && exec 3>&- 3<&- && return 0
+    sleep 0.05
+  done
+  die "x11vnc did not open localhost:${VNC_PORT} in time"
+}
+
 # Generic x11vnc server (Fedora/Debian families)
 distro_start_vnc_server() {
   command -v x11vnc >/dev/null 2>&1 || die "x11vnc not installed"
@@ -189,11 +198,13 @@ distro_start_vnc_server() {
     x11vnc -storepasswd "$X11VNC_PASSWORD" "$passfile"
     pass_opt="-rfbauth $passfile"
   fi
-  if ! pgrep -x x11vnc >/dev/null 2}&1; then
+  if ! pgrep -x x11vnc >/dev/null 2>&1; then
     log "Launching x11vnc on ${VNC_BIND}:${VNC_PORT}"
     x11vnc -display "$DISPLAY" -rfbport "$VNC_PORT" $bind_opt -forever -shared $pass_opt -bg -quiet
   fi
+  wait_for_vnc
 }
+
 
 # Hook for distro-specific prettification (optional)
 distro_pretty_desktop() { :; }
