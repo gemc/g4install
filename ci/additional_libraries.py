@@ -120,7 +120,10 @@ def main():
 	args = parser.parse_args()
 	is_valid_image(args.image)
 
-	commands = install_additional_libraries(args.image, args.geant4_version, args.root_version, args.meson_version,
+	commands = install_additional_libraries(args.image,
+	                                        args.geant4_version,
+	                                        args.root_version,
+	                                        args.meson_version,
 	                                        args.novnc_version)
 	print(commands)
 

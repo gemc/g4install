@@ -95,17 +95,21 @@ def additional_preamble(image: str) -> str:
 	return commands
 
 
-def create_dockerfile(image: str, base: str, root_version: str, meson_version: str,
+def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: str, meson_version: str,
                       novnc_version: str) -> str:
 	commands = ""
 
-	commands += docker_header(image, base)
+	commands += docker_header(image, tag)
 	commands += copy_setup_file(image)
 	commands += install_jlab_ca(image)
 	commands += additional_preamble(image)
 	commands += packages_install_command(image)
 	commands += cleanup_string_by_family[map_family(image)]
-	commands += install_additional_libraries(image, root_version, meson_version, novnc_version)
+	commands += install_additional_libraries(image,
+	                                         geant4_version,
+	                                         root_version,
+	                                         meson_version,
+	                                         novnc_version)
 
 	return commands
 
@@ -144,6 +148,7 @@ def main():
 	is_valid_image(args.image)
 
 	dockerfile = create_dockerfile(args.image,
+	                               args.tag,
 	                               args.geant4_version,
 	                               args.root_version,
 	                               args.meson_version,
