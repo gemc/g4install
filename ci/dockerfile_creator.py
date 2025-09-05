@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, remote_novnc_startup_script
+from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, remote_novnc_startup_script, remote_novnc_startup_dir
 from packages import packages_install_command
 from additional_libraries import install_additional_libraries, install_g4installer
 
@@ -13,7 +13,7 @@ cleanup_string_by_family = {
 		" \\\n && dnf clean all"
 		" \\\n && rm -rf /var/cache/dnf \n"
 	),
-	"ubuntu":    (
+	"debian":    (
 		" \\\n && apt-get -y autoremove"
 		" \\\n && apt-get -y autoclean"
 		" \\\n && rm -rf /var/lib/apt/lists/* \n"
@@ -43,12 +43,13 @@ def copy_setup_file(image:str) -> str:
 	commands = "\n"
 	commands += "# Create local setup file\n"
 	commands += f"COPY {local_setup_file} {remote_setup_file} \n"
+	commands += f"COPY ci/novnc/start-novnc.sh {remote_novnc_startup_script()}\n"
 
 	family = map_family(image)
 	if family == "fedora":
-		commands += f"COPY ci/fedora/start-novnc.sh {remote_novnc_startup_script()}\n"
-	elif family == "ubuntu":
-		commands += f"COPY ci/debian/start-novnc.sh {remote_novnc_startup_script()}\n"
+		commands += f"COPY ci/novnc/fedora.sh {remote_novnc_startup_dir()}/fedora.sh\n"
+	elif family == "debian":
+		commands += f"COPY ci/novnc/debian.sh {remote_novnc_startup_dir()}/debian.sh\n"
 
 	return commands
 
@@ -60,7 +61,7 @@ def install_jlab_ca(image: str) -> str:
 	if family == "fedora":
 		commands += "ADD https://pki.jlab.org/JLabCA.crt /etc/pki/ca-trust/source/anchors/JLabCA.crt\n"
 		commands += "RUN update-ca-trust\n\n"
-	elif family == "ubuntu":
+	elif family == "debian":
 		commands += "ADD https://pki.jlab.org/JLabCA.crt /usr/local/share/ca-certificates/JLabCA.crt\n"
 		commands += "RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && update-ca-certificates\n\n"
 	elif family == "archlinux":
@@ -83,7 +84,7 @@ def additional_preamble(image: str) -> str:
 				"    && dnf install -y almalinux-release-synergy \n\n"
 			)
 
-	elif family == "ubuntu":
+	elif family == "debian":
 		commands += ""
 
 	elif family == "archlinux":

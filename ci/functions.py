@@ -20,8 +20,8 @@ def available_images() -> str:
 def map_family(image: str) -> str:
 	if image in ("almalinux", "centos"):
 		return "fedora"
-	if image == "debian":
-		return "ubuntu"
+	if image == "ubuntu":
+		return "debian"
 	return image
 
 
@@ -42,18 +42,25 @@ def local_setup_filename():
 def remote_setup_filename():
 	return '/etc/profile.d/local_g4setup.sh'
 
+
 def remote_novnc_startup_script() -> str:
 	return '/usr/local/bin/start-novnc'
+
+
+def remote_novnc_startup_dir() -> str:
+	return '/usr/local/bin/'
 
 
 def jlab_certificate() -> str:
 	return "/etc/pki/ca-trust/source/anchors/JLabCA.crt"
 
+
 def sim_home(is_cvfms: bool) -> str:
 	if is_cvfms:
 		return "/cvmfs/oasis.opensciencegrid.org/geant4"
 	else:
-		return "/opt/simulation"
+		return "/opt/software/"
+
 
 def curl_command(url: str) -> str:
 	"""

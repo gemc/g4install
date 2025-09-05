@@ -11,4 +11,3 @@ alias ll='ls -lah'
 alias gist='git status -s | grep -v \?'
 alias gista='git status -s'
 
-

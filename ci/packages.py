@@ -55,8 +55,8 @@ pkg_sections = {
 	},
 	# vnc: use tigervnc + python-websockify; we’ll fetch noVNC from GitHub
 	"vnc":            {
-		"fedora":    ["xterm", "x11vnc"],
-		"ubuntu":    ["xterm", "x11vnc"],
+		"fedora":    ["xterm", "x11vnc", "openbox", "tint2", "dejavu-sans-mono-fonts"],
+		"ubuntu":    ["xterm", "x11vnc", "openbox", "tint2", "dbus-x11", "fonts-dejavu-core"],
 		"archlinux": ["xterm", "tigervnc"],
 	},
 	"qt6":            {
@@ -91,7 +91,7 @@ def debian_adjustments(pkgs: list[str]) -> list[str]:
 
 
 def packages_to_be_installed(image: str) -> str:
-	family = map_family(image)  # e.g., 'ubuntu' (for debian), 'fedora', 'arch'
+	family = map_family(image)  # e.g., 'debian' (for ubuntu), 'fedora', 'arch'
 
 	pkgs = []
 	for section in pkg_sections.values():
@@ -114,7 +114,7 @@ def packages_install_command(image: str) -> str:
 	if family == "fedora":
 		command += f"RUN dnf install -y --allowerasing {packages}"
 
-	elif family == "ubuntu":
+	elif family == "debian":
 		command += (
 				"RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime \\\n"
 				" && apt-get update \\\n"

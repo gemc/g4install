@@ -121,8 +121,10 @@ jobs:
           fi
                     
           {
-            echo "\n\n"
+            echo ""
+            echo ""
             echo "## **Tag:** \`${IMAGE}:${TAG}\`"
+            echo ""
             echo ""
             echo "For MacOS silicon hosts set this up first:"
             echo '```bash'
@@ -130,7 +132,6 @@ jobs:
             echo '```'
             echo ""
 
-          
             echo ""
             echo "### Pull"
             echo '```bash'
@@ -152,7 +153,7 @@ jobs:
 
             echo ""
             echo "### Run in Native VNC client (TigerVNC/RealVNC/etc.):"
-            echo "VNC client at localhost:5900 (password: change-me)"
+            echo "_VNC viewer → localhost:5900 (password: change-me)_"
             echo '```bash'
             echo "docker run --rm -it \$PLATFORM -p 8080:6080 -p 5900:5900 -e VNC_BIND=0.0.0.0 -e X11VNC_PASSWORD='change-me' ${IMAGE}:${TAG}"
             echo '```'
