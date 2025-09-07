@@ -29,7 +29,7 @@ jobs:
             echo "Set these convenience variable to run docker (set your own password!):"
             echo '```bash'
             echo 'export VPORTS="-p 6080:6080 -p 5900:5900"'
-            echo 'export VNC_PASS="change-me" 
+            echo 'export VNC_PASS="change-me"'
             echo 'export VNC_BIND="-e VNC_BIND=0.0.0.0"'
             echo '```'
             echo ""
