@@ -45,14 +45,15 @@ def copy_setup_file(image: str) -> str:
 	commands += "# Create local setup file\n"
 	commands += f"COPY {local_setup_file} {remote_setup_file} \n"
 	commands += f"COPY ci/novnc/start-novnc.sh {remote_novnc_startup_script()}\n"
+	commands += f"RUN install -d -m 0755 /usr/local/bin/start-novnc.d"
 
 	family = map_family(image)
 	if family == "fedora":
-		commands += f"COPY ci/novnc/fedora.sh {remote_novnc_startup_dir()}/fedora.sh\n"
+		commands += f"COPY ci/novnc/fedora.sh {remote_novnc_startup_dir()}/start-novnc.d/fedora.sh\n"
 	elif family == "debian":
-		commands += f"COPY ci/novnc/debian.sh {remote_novnc_startup_dir()}/debian.sh\n"
+		commands += f"COPY ci/novnc/debian.sh {remote_novnc_startup_dir()}/start-novnc.d/debian.sh\n"
 	elif family == "archlinux":
-		commands += f"COPY ci/novnc/archlinux.sh {remote_novnc_startup_dir()}/archlinux.sh\n"
+		commands += f"COPY ci/novnc/arch.sh {remote_novnc_startup_dir()}/start-novnc.d/arch.sh\n"
 
 	return commands
 

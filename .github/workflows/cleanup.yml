@@ -21,4 +21,4 @@ jobs:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           delete-untagged: true
-          dry-run: true
+          older-than: 2 days

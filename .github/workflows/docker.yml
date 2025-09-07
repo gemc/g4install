@@ -24,18 +24,18 @@ jobs:
           {
             echo "# Geant4 Images — Overview"
             echo ""
-            echo "**Run:** $GITHUB_RUN_NUMBER  |  **Repo:** \`$GITHUB_REPOSITORY\`  |  **Commit:** \`$GITHUB_SHA\`"
             echo ""
             echo "Set these convenience variable to run docker (set your own password!):"
             echo '```bash'
             echo 'export VPORTS="-p 6080:6080 -p 5900:5900"'
             echo 'export VNC_PASS="change-me"'
             echo 'export VNC_BIND="-e VNC_BIND=0.0.0.0"'
+            echo 'export VPLATFORM=""'  
             echo '```'
             echo ""
-            echo "For MacOS silicon hosts set this up first:"
+            echo "For MacOS silicon add:"
             echo '```bash'
-            echo 'export PLATFORM="--platform=linux/amd64"'
+            echo 'export VPLATFORM="--platform=linux/amd64"'
             echo '```'
             echo "---"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -159,14 +159,14 @@ jobs:
             echo ""
             echo "### Run interactive shell"
             echo '```bash'
-            echo "docker run --rm -it \$PLATFORM ${IMAGE}:${TAG} bash -l"
+            echo "docker run --rm -it \$VPLATFORM ${IMAGE}:${TAG} bash -l"
             echo '```'
             echo ""
             echo "### Run using VNC or noVNC in a browser:"
             echo "_VNC viewer → localhost:5900 (password: change-me)_"
             echo "_noVNC web client at http://localhost:6080/vnc.html (password: change-me)_"
             echo '```bash'
-            echo "docker run --rm -it \$PLATFORM -p 6080:6080 -p 5900:5900 -e VNC_BIND=0.0.0.0 -e X11VNC_PASSWORD='change-me' ${IMAGE}:${TAG}"
+            echo "docker run --rm -it \$VPLATFORM \$VPORTS \$VNC_BIND \$VNC_PASS ${IMAGE}:${TAG}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           
