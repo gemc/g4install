@@ -57,7 +57,7 @@ pkg_sections = {
 	"vnc":            {
 		"fedora":    ["xterm", "x11vnc", "openbox", "tint2", "dejavu-sans-mono-fonts"],
 		"debian":    ["xterm", "x11vnc", "openbox", "tint2", "dbus-x11", "fonts-dejavu-core"],
-		"archlinux": ["xterm", "tigervnc"],
+		"archlinux": ["xterm", "tigervnc", "openbox", "ttf-dejavu"],
 	},
 	"qt6":            {
 		"fedora":    ["qt6-qtbase-devel"],

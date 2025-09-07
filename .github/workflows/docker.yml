@@ -12,6 +12,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  overview:
+    name: Workflow Overview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write overview
+        shell: bash
+        run: |
+          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/summary.md}"
+          {
+            echo "# GEMC Geant4 Images — Overview"
+            echo ""
+            echo "**Run:** $GITHUB_RUN_NUMBER  |  **Repo:** \`$GITHUB_REPOSITORY\`  |  **Commit:** \`$GITHUB_SHA\`"
+            echo ""
+            echo "This workflow builds/publishes Geant4 container images for multiple distros."
+            echo ""
+            echo "Tips:"
+            echo "- On Apple Silicon, set \`PLATFORM=\"--platform=linux/amd64\"\`"
+            echo "- Use the job-specific summaries below for pull/run commands."
+            echo ""
+            echo "---"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   discover:
     name: Discover Dockerfiles
     runs-on: ubuntu-latest
@@ -28,7 +51,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }}
-    needs: discover
+    needs: [overview, discover]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -152,44 +175,3 @@ jobs:
           echo "Wrote $GITHUB_WORKSPACE/summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md"
           ls -l "$GITHUB_WORKSPACE/summaries"
 
-      - name: Upload per-job summary artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: summary-${{ matrix.image }}-${{ matrix.image_tag }}
-          path: summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md
-          if-no-files-found: error
-
-
-  # Final aggregator job
-  workflow-summary:
-    name: Workflow summary
-    runs-on: ubuntu-latest
-    needs: [build]      # add all other job ids here, or: needs: [discover, build, test, ...]
-    if: ${{ always() }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: summary-*
-          merge-multiple: true
-
-      - name: Build consolidated summary
-        shell: bash
-        run: |
-          set -euo pipefail
-          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/summary.md}"
-          {
-            echo "# GEMC Geant4 Images — Run $GITHUB_RUN_NUMBER"
-            echo ""
-            echo "**Commit:** \`$GITHUB_SHA\`  |  **Event:** \`$GITHUB_EVENT_NAME\`  |  **Actor:** \`$GITHUB_ACTOR\`"
-            echo ""
-            for f in summary-*.md; do
-              [ -f "$f" ] || continue
-              title="${f%.md}"
-              echo "<details><summary>${title}</summary>"
-              echo ""
-              cat "$f"
-              echo ""
-              echo "</details>"
-              echo ""
-            done
-          } >> "$GITHUB_STEP_SUMMARY"
