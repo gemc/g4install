@@ -1,11 +1,25 @@
 name: Cleanup old GHCR images
 
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"  # Mondays 03:00 UTC
+
+permissions:
+  contents: read
+  packages: write  # needed for deletions with GITHUB_TOKEN
+
+concurrency:
+  group: ghcr-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  - name: ghcr.io cleanup action
+  cleanup:
+    name: ghcr.io cleanup
     runs-on: ubuntu-latest
     steps:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           delete-untagged: true
-          dry-run: true
           older-than: 2 days
+          dry-run: true

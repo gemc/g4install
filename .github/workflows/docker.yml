@@ -109,46 +109,34 @@ jobs:
           cache-to: type=registry,ref=${{ needs.discover.outputs.image }}:cache,mode=max
 
 
-      - name: Summarize image reference
+      - name: Summarize image reference (per-job)
         shell: bash
         env:
           IMAGE: ${{ needs.discover.outputs.image }}
           TAG: ${{ matrix.geant4_tag }}-${{ matrix.image }}-${{ matrix.image_tag }}
-          PUSHED: ${{ github.event_name != 'pull_request' }}
         run: |
-          # prepare summary target safely
-          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-            SUMMARY_OUT="$GITHUB_STEP_SUMMARY"
-          else
-            SUMMARY_OUT="$RUNNER_TEMP/step_summary.md"
-            mkdir -p "$(dirname "$SUMMARY_OUT")"
-            echo "GITHUB_STEP_SUMMARY not set; writing to $SUMMARY_OUT"
-          fi
-          
+          set -euo pipefail
+      
+          # Append to the job's step summary (what you already had)
+          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/step_summary.md}"
           {
-            echo ""
             echo ""
             echo "## **Tag:** \`${IMAGE}:${TAG}\`"
             echo ""
-            echo ""
             echo "For MacOS silicon hosts set this up first:"
             echo '```bash'
-            echo "export PLATFORM=\"--platform=linux/amd64\""
+            echo 'export PLATFORM="--platform=linux/amd64"'
             echo '```'
-            echo ""
-
             echo ""
             echo "### Pull"
             echo '```bash'
             echo "docker pull \$PLATFORM ${IMAGE}:${TAG}"
             echo '```'
-          
             echo ""
             echo "### Run interactive shell"
             echo '```bash'
             echo "docker run --rm -it \$PLATFORM ${IMAGE}:${TAG} bash -l"
             echo '```'
-          
             echo ""
             echo "### Run using VNC or noVNC in a browser:"
             echo "_VNC viewer → localhost:5900 (password: change-me)_"
@@ -156,17 +144,21 @@ jobs:
             echo '```bash'
             echo "docker run --rm -it \$PLATFORM -p 6080:6080 -p 5900:5900 -e VNC_BIND=0.0.0.0 -e X11VNC_PASSWORD='change-me' ${IMAGE}:${TAG}"
             echo '```'
-          
-          } >> "$SUMMARY_OUT"
-          
-          echo "Summary written to: $SUMMARY_OUT"
+          } >> "$GITHUB_STEP_SUMMARY"
+      
+          # Also save a copy inside the workspace for artifact upload
+          mkdir -p "$GITHUB_WORKSPACE/summaries"
+          cat "$GITHUB_STEP_SUMMARY" > "$GITHUB_WORKSPACE/summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md"
+          echo "Wrote $GITHUB_WORKSPACE/summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md"
+          ls -l "$GITHUB_WORKSPACE/summaries"
 
       - name: Upload per-job summary artifact
         uses: actions/upload-artifact@v4
         with:
           name: summary-${{ matrix.image }}-${{ matrix.image_tag }}
-          path: ${{ runner.temp }}/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md
+          path: summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md
           if-no-files-found: error
+
 
   # Final aggregator job
   workflow-summary:
@@ -183,17 +175,17 @@ jobs:
       - name: Build consolidated summary
         shell: bash
         run: |
+          set -euo pipefail
           : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/summary.md}"
           {
             echo "# GEMC Geant4 Images — Run $GITHUB_RUN_NUMBER"
             echo ""
-            echo "**Commit:** \`$GITHUB_SHA\`  |  **Event:** \`${GITHUB_EVENT_NAME}\`  |  **Actor:** \`${GITHUB_ACTOR}\`"
-            echo ""
-            echo "Below are the per-image snippets from all jobs:"
+            echo "**Commit:** \`$GITHUB_SHA\`  |  **Event:** \`$GITHUB_EVENT_NAME\`  |  **Actor:** \`$GITHUB_ACTOR\`"
             echo ""
             for f in summary-*.md; do
               [ -f "$f" ] || continue
-              echo "<details><summary>${f}</summary>"
+              title="${f%.md}"
+              echo "<details><summary>${title}</summary>"
               echo ""
               cat "$f"
               echo ""
