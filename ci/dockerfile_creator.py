@@ -51,6 +51,8 @@ def copy_setup_file(image: str) -> str:
 		commands += f"COPY ci/novnc/fedora.sh {remote_novnc_startup_dir()}/fedora.sh\n"
 	elif family == "debian":
 		commands += f"COPY ci/novnc/debian.sh {remote_novnc_startup_dir()}/debian.sh\n"
+	elif family == "archlinux":
+		commands += f"COPY ci/novnc/archlinux.sh {remote_novnc_startup_dir()}/archlinux.sh\n"
 
 	return commands
 

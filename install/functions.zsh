@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# on distros installation module dir is 
+# on distros installation module dir is
 if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; then
   for f in \
     /usr/share/Modules/init/zsh \

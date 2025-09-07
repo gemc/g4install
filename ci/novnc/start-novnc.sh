@@ -122,6 +122,8 @@ start_pretty_desktop() {
     fi
   done
   apply_xterm_theme
+  command -v setxkbmap >/dev/null 2>&1 && DISPLAY="$DISPLAY" setxkbmap -layout us || true
+
   if [ -n "${AUTOSTART:-}" ] && command -v xterm >/dev/null 2>&1; then
     log "Autostart: $AUTOSTART"
     DISPLAY="$DISPLAY" bash -lc "$AUTOSTART" >/dev/null 2>&1 &

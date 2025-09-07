@@ -150,7 +150,7 @@ jobs:
             echo '```'
           
             echo ""
-            echo "### Run in Native VNC client (TigerVNC/RealVNC/etc.) or in Browser (noVNC):"
+            echo "### Run using VNC or noVNC in a browser:"
             echo "_VNC viewer → localhost:5900 (password: change-me)_"
             echo "_noVNC web client at http://localhost:6080/vnc.html (password: change-me)_"
             echo '```bash'
@@ -160,3 +160,44 @@ jobs:
           } >> "$SUMMARY_OUT"
           
           echo "Summary written to: $SUMMARY_OUT"
+
+      - name: Upload per-job summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: summary-${{ matrix.image }}-${{ matrix.image_tag }}
+          path: ${{ runner.temp }}/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md
+          if-no-files-found: error
+
+  # Final aggregator job
+  workflow-summary:
+    name: Workflow summary
+    runs-on: ubuntu-latest
+    needs: [build]      # add all other job ids here, or: needs: [discover, build, test, ...]
+    if: ${{ always() }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: summary-*
+          merge-multiple: true
+
+      - name: Build consolidated summary
+        shell: bash
+        run: |
+          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/summary.md}"
+          {
+            echo "# GEMC Geant4 Images — Run $GITHUB_RUN_NUMBER"
+            echo ""
+            echo "**Commit:** \`$GITHUB_SHA\`  |  **Event:** \`${GITHUB_EVENT_NAME}\`  |  **Actor:** \`${GITHUB_ACTOR}\`"
+            echo ""
+            echo "Below are the per-image snippets from all jobs:"
+            echo ""
+            for f in summary-*.md; do
+              [ -f "$f" ] || continue
+              echo "<details><summary>${f}</summary>"
+              echo ""
+              cat "$f"
+              echo ""
+              echo "</details>"
+              echo ""
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
