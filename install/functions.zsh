@@ -168,15 +168,41 @@ cmake_build_and_install() {
 	echo
 	echo "$magenta > Configuring cmake...$reset"
 	cmake "$source_dir" -DCMAKE_INSTALL_PREFIX="$install_dir" $=cmake_options 2>"$install_dir/cmake_err.txt" 1>"$install_dir/cmake_log.txt" || whine_and_quit "cmake $source_dir -DCMAKE_INSTALL_PREFIX=$install_dir $=cmake_options"
+	if [ $? -ne 0 ]; then
+		echo "cmake failed. Error Log: "
+		cat $install_dir/cmake_err.txt
+		echo "cmake failed. Build Log: "
+		cat $install_dir/cmake_log.txt
+		echo Test Failure
+		exit 1
+	else
+		echo cmake Successful
+		echo ; echo
+	fi
 
 	echo "$magenta > Done, now building...$reset"
-	make -j "$n_cpu"
-#	make -j "$n_cpu" 2>$install_dir/build_err.txt 1>"$install_dir/build_log.txt" || whine_and_quit "make -j $n_cpu"
+	make -j "$n_cpu" 2>$install_dir/build_err.txt 1>"$install_dir/build_log.txt" || whine_and_quit "make -j $n_cpu"
+	if [ $? -ne 0 ]; then
+		echo "make failed. Build Log: "
+		cat $install_dir/cmake_log.txt
+		echo Test Failure
+		exit 1
+	else
+		echo cmake Successful
+		echo ; echo
+	fi
 
 	echo "$magenta > Done, now installing...$reset"
-	make install
-#	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt" || whine_and_quit "make install"
-
+	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt" || whine_and_quit "make install"
+	if [ $? -ne 0 ]; then
+		echo "make install failed. Install Log: "
+		cat $install_dir/install_log.txt
+		echo Test Failure
+		exit 1
+	else
+		echo cmake Successful
+		echo ; echo
+	fi
 	echo " Content of $install_dir after installation:"
 	ls -l "$install_dir"
 	if [[ -d "$install_dir/lib" ]]; then
