@@ -26,7 +26,7 @@ trap 'code=$?; echo "[start-novnc] ERROR at line $LINENO: $BASH_COMMAND (exit $c
 : "${NOVNC_LISTEN:=0.0.0.0}"        # bind address for noVNC (0.0.0.0 is best for Docker)
 : "${NOVNC_PUBLIC_HOST:=localhost}" # printed hint for user
 : "${NOVNC_PUBLIC_PORT:=${NOVNC_PORT}}"
-: "${AUTOSTART:=xterm -ls}"         # app to start inside the X session ("" to disable)
+: "${AUTOSTART:=xterm -geometry 120x36 -fa 'DejaVu Sans Mono' -fs 11 -e bash --login -i}"
 : "${XVFB_BIN:=Xvfb}"
 : "${XTERM_THEME:=1}"               # 1=apply a nicer xterm Xresources, 0=leave stock
 : "${VNC_BIND:=localhost}"          # 'localhost' or '0.0.0.0' for native VNC access
@@ -207,7 +207,8 @@ distro_start_vnc_server() {
       log "Launching x11vnc on ${VNC_BIND}:${VNC_PORT}"
       x11vnc -display "$DISPLAY" -rfbport "$VNC_PORT" $bind_opt -forever -shared $pass_opt -bg -quiet
     fi
-    wait_for_vnc; return
+    wait_for_vnc
+    return
   fi
 
   # Fallback: TigerVNC backend (Arch)
@@ -226,7 +227,8 @@ distro_start_vnc_server() {
       x0vncserver -display "$DISPLAY" -rfbport "$VNC_PORT" \
         $local_opt -AlwaysShared=1 $sec_opts >/dev/null 2>&1 &
     fi
-    wait_for_vnc; return
+    wait_for_vnc;
+    return
   fi
 
   die "No VNC server found (need x11vnc or tigervnc/x0vncserver)"

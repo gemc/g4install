@@ -12,9 +12,3 @@ distro_resolve_novnc_proxy() {
     return 1
   fi
 }
-
-# Start x11vnc (Fedora family uses x11vnc)
-distro_start_vnc_server() { :; }  # default in main already does x11vnc
-
-# Optional: tiny Fedora tweak (nothing needed for now)
-distro_pretty_desktop() { :; }

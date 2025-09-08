@@ -12,8 +12,6 @@ distro_resolve_novnc_proxy() {
   fi
 }
 
-# Debian/Ubuntu also use x11vnc by default → no override needed
-distro_start_vnc_server() { :; }
 
 # Optional: ensure dbus-launch for some WMs (if installed)
 distro_pretty_desktop() {

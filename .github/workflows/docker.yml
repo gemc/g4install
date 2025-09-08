@@ -7,10 +7,6 @@ on:
     tags: [ 'v*' ]       # also publish on version tags
   pull_request:          # PRs: build only (no push)
 
-concurrency:
-  group: ghcr-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
 
   overview:
@@ -25,17 +21,16 @@ jobs:
             echo "# Geant4 Images — Overview"
             echo ""
             echo ""
-            echo "Set these convenience variable to run docker (choose your own password):"
+            echo "Set these convenience variables to run docker (choose your own password)"
             echo '```bash'
-            echo 'export VPORTS="-p 6080:6080 -p 5900:5900"'
-            echo 'export VNC_PASS="change-me"'
-            echo 'export VNC_BIND="-e VNC_BIND=0.0.0.0"'
-            echo 'export VPLATFORM=""'  
+            echo 'VPORTS=(-p 6080:6080 -p 5900:5900)'
+            echo 'VNC_PASS=(-e X11VNC_PASSWORD=change-me)'
+            echo 'VNC_BIND=(-e VNC_BIND=0.0.0.0)'
             echo '```'
             echo ""
             echo "For MacOS silicon:"
             echo '```bash'
-            echo 'export VPLATFORM="--platform=linux/amd64"'
+            echo 'VPLATFORM="--platform=linux/amd64"'
             echo '```'
             echo "---"
           } >> "$GITHUB_STEP_SUMMARY"

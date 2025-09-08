@@ -1,17 +1,17 @@
 name: Cleanup old GHCR images
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "0 3 * * 1"  # Mondays 03:00 UTC
+    # every night at 1:00.
+    - cron: '00 4 * * *'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 permissions:
   contents: read
   packages: write  # needed for deletions with GITHUB_TOKEN
 
-concurrency:
-  group: ghcr-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   cleanup:
