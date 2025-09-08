@@ -25,7 +25,7 @@ jobs:
             echo "# Geant4 Images — Overview"
             echo ""
             echo ""
-            echo "Set these convenience variable to run docker (set your own password!):"
+            echo "Set these convenience variable to run docker (choose your own password):"
             echo '```bash'
             echo 'export VPORTS="-p 6080:6080 -p 5900:5900"'
             echo 'export VNC_PASS="change-me"'
@@ -33,7 +33,7 @@ jobs:
             echo 'export VPLATFORM=""'  
             echo '```'
             echo ""
-            echo "For MacOS silicon add:"
+            echo "For MacOS silicon:"
             echo '```bash'
             echo 'export VPLATFORM="--platform=linux/amd64"'
             echo '```'

@@ -170,10 +170,12 @@ cmake_build_and_install() {
 	cmake "$source_dir" -DCMAKE_INSTALL_PREFIX="$install_dir" $=cmake_options 2>"$install_dir/cmake_err.txt" 1>"$install_dir/cmake_log.txt" || whine_and_quit "cmake $source_dir -DCMAKE_INSTALL_PREFIX=$install_dir $=cmake_options"
 
 	echo "$magenta > Done, now building...$reset"
-	make -j "$n_cpu" 2>$install_dir/build_err.txt 1>"$install_dir/build_log.txt" || whine_and_quit "make -j $n_cpu"
+	make -j "$n_cpu"
+#	make -j "$n_cpu" 2>$install_dir/build_err.txt 1>"$install_dir/build_log.txt" || whine_and_quit "make -j $n_cpu"
 
 	echo "$magenta > Done, now installing...$reset"
-	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt" || whine_and_quit "make install"
+	make install
+#	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt" || whine_and_quit "make install"
 
 	echo " Content of $install_dir after installation:"
 	ls -l "$install_dir"

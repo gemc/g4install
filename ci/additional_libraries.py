@@ -108,8 +108,8 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	commands += install_root_tarball(image, root_version)
 	commands += install_meson(meson_version)
 	commands += install_novnc(novnc_version)
+	commands += install_g4installer(0, geant4_version)
 	if image != "archlinux" and image != "debian":
-		commands += install_g4installer(0, geant4_version)
 		commands += install_geant4(geant4_version)
 
 	return commands
