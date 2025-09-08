@@ -49,9 +49,9 @@ pkg_sections = {
 
 	},
 	"utilities_2":    {
-		"fedora":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
-		"debian":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch"],
-		"archlinux": ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch", "bash-completion"],
+		"fedora":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch", "bash-completion"],
+		"debian":    ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch", "bash-completion"],
+		"archlinux": ["psmisc", "procps", "mailcap", "net-tools", "rsync", "patch", "bash-completion", "ncurses"],
 	},
 	# vnc: use tigervnc + python-websockify; we’ll fetch noVNC from GitHub
 	"vnc":            {

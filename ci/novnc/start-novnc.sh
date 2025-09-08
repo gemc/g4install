@@ -64,9 +64,12 @@ apply_xterm_theme() {
   cat > /tmp/Xresources <<'XRS'
 XTerm*faceName: DejaVu Sans Mono
 XTerm*faceSize: 11
++XTerm*termName: xterm-256color
 XTerm*allowBoldFonts: true
 XTerm*scrollBar: true
 XTerm*rightScrollBar: true
++XTerm*metaSendsEscape: true
++XTerm*ttyModes: erase ^?
 XTerm*vt100.translations: #override \n\
   Ctrl Shift <Key>C: copy-selection(CLIPBOARD)\n\
   Ctrl Shift <Key>V: insert-selection(CLIPBOARD)

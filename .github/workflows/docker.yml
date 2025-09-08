@@ -19,6 +19,7 @@ jobs:
           : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/summary.md}"
           {
             echo "# Geant4 Images — Overview"
+            echo "Repository: [g4install images](https://github.com/gemc/g4install/pkgs/container/g4install)"
             echo ""
             echo ""
             echo "Set these convenience variables to run docker (choose your own password)"
@@ -149,7 +150,7 @@ jobs:
             echo ""
             echo "### Pull"
             echo '```bash'
-            echo "docker pull \$PLATFORM ${IMAGE}:${TAG}"
+            echo "docker pull \$VPLATFORM ${IMAGE}:${TAG}"
             echo '```'
             echo ""
             echo "### Run interactive shell"

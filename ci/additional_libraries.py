@@ -69,7 +69,19 @@ RUN pacman -Syu --noconfirm \
     && echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-build \
     && chmod 440 /etc/sudoers.d/99-build \
     && su - build -c 'git clone https://aur.archlinux.org/lmod.git && cd lmod && makepkg -si --noconfirm --needed' 
+""".lstrip()
 
+
+def install_envmod_on_arch() -> str:
+	return r"""
+# Install env-modules on Arch Linux
+RUN pacman -Syu --noconfirm \
+    && pacman -S --needed --noconfirm base-devel git sudo fakeroot tcl procps pacman-contrib \
+    && useradd -m -G wheel -s /bin/bash build \
+    && echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-build \
+    && chmod 440 /etc/sudoers.d/99-build \
+    && su - build -c 'git clone https://aur.archlinux.org/env-modules.git && cd env-modules && updpkgsums && makepkg -si --noconfirm --needed' \
+    && pacman -U --noconfirm /home/build/env-modules/*.pkg.tar.zst
 """.lstrip()
 
 
@@ -88,6 +100,18 @@ def install_g4installer(is_cvfms: bool, geant4_version: str) -> str:
 	return commands
 
 
+def install_clhep(version: str) -> str:
+	commands = f"\n# Install CLHEP {version}\n"
+	commands += f'RUN source {remote_setup_filename()} \\\n'
+	commands += f'    && install_clhep {version}\n'
+	return commands
+
+def install_xercesc(version: str) -> str:
+	commands = f"\n# Install XERCESC {version}\n"
+	commands += f'RUN source {remote_setup_filename()} \\\n'
+	commands += f'    && install_xercesc {version}\n'
+	return commands
+
 def install_geant4(version: str) -> str:
 	commands = f"\n# Install Geant4 {version}\n"
 	commands += f'RUN source {remote_setup_filename()} \\\n'
@@ -95,12 +119,19 @@ def install_geant4(version: str) -> str:
 	return commands
 
 
+
 def install_additional_libraries(image: str, geant4_version: str, root_version: str,
                                  meson_version: str,
                                  novnc_version: str) -> str:
+
+	# hardcoding clhep, xercesc versions
+	clhep_version = '2.4.7.1'
+	xercesc_version = '3.2.5'
+
 	commands = '\n'
 	if image == "archlinux":
-		commands += install_lmod_on_arch()
+		commands += install_envmod_on_arch()
+
 	commands += '\n# Install additional libraries\n'
 	commands += f'# ROOT version: {root_version}\n'
 	commands += f'# Meson version: {meson_version}\n'
@@ -108,9 +139,10 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	commands += install_root_tarball(image, root_version)
 	commands += install_meson(meson_version)
 	commands += install_novnc(novnc_version)
-	commands += install_g4installer(0, geant4_version)
-	if image != "archlinux" and image != "debian":
-		commands += install_geant4(geant4_version)
+	commands += install_g4installer(False, geant4_version)
+	commands += install_clhep(clhep_version)
+	commands += install_xercesc(xercesc_version)
+	commands += install_geant4(geant4_version)
 
 	return commands
 
