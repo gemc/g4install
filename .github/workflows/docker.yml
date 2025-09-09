@@ -29,7 +29,7 @@ jobs:
             echo 'VNC_BIND=(-e VNC_BIND=0.0.0.0)'
             echo '```'
             echo ""
-            echo "For MacOS silicon:"
+            echo "For amd64 CPUS (for example, MacOS silicon):"
             echo '```bash'
             echo 'VPLATFORM="--platform=linux/amd64"'
             echo '```'
@@ -53,7 +53,7 @@ jobs:
   # Per-arch build jobs
   # ===========================
   build_amd64:
-    name: Build (amd64) ${{ matrix.geant4_tag }} from ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: Build (amd64) from ${{ matrix.image }}:${{ matrix.image_tag }}
     needs: [ overview, discover ]
     runs-on: ubuntu-latest
     permissions:
@@ -126,7 +126,7 @@ jobs:
           OUT="$RUNNER_TEMP/summary.md"
           : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/step_summary.md}"
           {
-            echo "## Built (amd64) \`${IMAGE}:${TAG}\`"
+            echo "## \`${IMAGE}:${TAG}\`"
             echo ""
             echo "### Pull"
             echo '```bash'
@@ -154,16 +154,18 @@ jobs:
           path: ${{ runner.temp }}/summary.md
           if-no-files-found: ignore
 
+  # build_arm64 job header
   build_arm64:
     name: Build (arm64) ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }}
-    needs: [ overview, discover ]
-    runs-on: ubuntu-latest
+    needs: [overview, discover]
+    runs-on: ubuntu-24.04-arm   # <— use native ARM64 runner
     permissions:
       contents: read
       packages: write
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+
 
     steps:
       - name: Checkout repository
@@ -173,10 +175,6 @@ jobs:
       - name: Skip note (archlinux is amd64-only)
         if: ${{ matrix.image == 'archlinux' }}
         run: echo "Skipping arm64 build for archlinux"
-
-      - name: Enable QEMU
-        if: ${{ matrix.image != 'archlinux' }}
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Buildx
         if: ${{ matrix.image != 'archlinux' }}

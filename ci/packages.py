@@ -40,11 +40,11 @@ pkg_sections = {
 
 	},
 	"utilities_1":    {
-		"fedora":    ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
+		"fedora":    ["bzip2", "wget", "curl", "nano", "bash", "zsh",
 		              "hostname", "gedit", "environment-modules", "pv", "which"],
-		"debian":    ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
+		"debian":    ["bzip2", "wget", "curl", "nano", "bash", "zsh",
 		              "hostname", "gedit", "environment-modules", "pv", "which", "ca-certificates"],
-		"archlinux": ["bzip2", "wget", "curl", "nano", "bash", "tcsh", "zsh",
+		"archlinux": ["bzip2", "wget", "curl", "nano", "bash", "zsh",
 		              "inetutils", "gedit", "pv", "which", "fakeroot"],
 
 	},
