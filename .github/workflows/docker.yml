@@ -53,7 +53,7 @@ jobs:
   # Per-arch build jobs
   # ===========================
   build_amd64:
-    name: Build (amd64) ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: Build (amd64) ${{ matrix.geant4_tag }} from ${{ matrix.image }}:${{ matrix.image_tag }}
     needs: [overview, discover]
     runs-on: ubuntu-latest
     permissions:
@@ -240,15 +240,16 @@ jobs:
             docker buildx imagetools create -t "$BASE_TAG" "$AMD_TAG"
           fi
 
-      - name: Summarize image reference (multi-arch)
+      - name: Summary (amd64)
+        if: ${{ always() }}
         shell: bash
         env:
           IMAGE: ${{ needs.discover.outputs.image }}
           TAG: ${{ format('{0}-{1}-{2}', matrix.geant4_tag, matrix.image, matrix.image_tag) }}
         run: |
-          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/manifest_summary.md}"
+          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/summary.md}"
           {
-            echo "## Published: \`${IMAGE}:${TAG}\` (multi-arch manifest)"
+            echo "## Built (amd64) \`${IMAGE}:${TAG}\`"
             echo ""
             echo "### Pull"
             echo '```bash'
@@ -268,9 +269,63 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Summary (arm64)
+        if: ${{ always() }}
+        shell: bash
+        env:
+          IMAGE: ${{ needs.discover.outputs.image }}
+          TAG: ${{ format('{0}-{1}-{2}', matrix.geant4_tag, matrix.image, matrix.image_tag) }}
+          IS_ARCHLINUX: ${{ matrix.image == 'archlinux' }}
+        run: |
+          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/summary.md}"
+          if [ "$IS_ARCHLINUX" = "true" ]; then
+            echo "## Skipped arm64 for archlinux (\`${IMAGE}:${TAG}\`)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## Built (arm64) \`${IMAGE}:${TAG}\`"
+              echo ""
+              echo "### Pull"
+              echo '```bash'
+              echo "docker pull \$VPLATFORM ${IMAGE}:${TAG}"
+              echo '```'
+              echo ""
+              echo "### Run interactive shell"
+              echo '```bash'
+              echo "docker run --rm -it \$VPLATFORM ${IMAGE}:${TAG} bash -l"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Summary (manifest)
+        if: ${{ always() }}
+        shell: bash
+        env:
+          IMAGE: ${{ needs.discover.outputs.image }}
+          TAG: ${{ format('{0}-{1}-{2}', matrix.geant4_tag, matrix.image, matrix.image_tag) }}
+        run: |
+          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/manifest_summary.md}"
+          {
+            echo "## Published manifest: \`${IMAGE}:${TAG}\`"
+            echo ""
+            echo "Includes:"
+            if docker buildx imagetools inspect "${IMAGE}:${TAG}-amd64" >/dev/null 2>&1; then echo "- amd64"; fi
+            if docker buildx imagetools inspect "${IMAGE}:${TAG}-arm64" >/dev/null 2>&1; then echo "- arm64"; else echo "- arm64 (skipped)"; fi
+            echo ""
+            echo "### Pull"
+            echo '```bash'
+            echo "docker pull \$VPLATFORM ${IMAGE}:${TAG}"
+            echo '```'
+            echo ""
+            echo "### Run (interactive)"
+            echo '```bash'
+            echo "docker run --rm -it \$VPLATFORM ${IMAGE}:${TAG} bash -l"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+
           # Also save a copy inside the workspace for artifact upload
           mkdir -p "$GITHUB_WORKSPACE/summaries"
-          cat "$GITHUB_STEP_SUMMARY" > "$GITHUB_WORKSPACE/summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md"
+          cp "$GITHUB_STEP_SUMMARY" "$GITHUB_WORKSPACE/summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}-${{ job.status }}.md" || true
           echo "Wrote $GITHUB_WORKSPACE/summaries/summary-${{ matrix.image }}-${{ matrix.image_tag }}.md"
           ls -l "$GITHUB_WORKSPACE/summaries"
 
