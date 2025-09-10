@@ -20,4 +20,6 @@ alias gist='git status -s | grep -v \?'
 alias gista='git status -s'
 
 set autolist
+set mark-directories on
+complete -r
 

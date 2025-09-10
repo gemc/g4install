@@ -6,7 +6,7 @@ if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; t
     /usr/share/Modules/init/zsh \
     /usr/share/modules/init/zsh \
     /usr/share/lmod/lmod/init/zsh \
-    /etc/profile.d/lmod.zsh \
+    /etc/profile.d/env-modules.sh \
     /etc/profile.d/modules.zsh
   do
     [[ -r "$f" ]] && source "$f" && break
@@ -220,6 +220,9 @@ cmake_build_and_install() {
 		echo "$magenta > Deleting source directory...$reset"
 		rm -rf "$source_dir"
 	fi
+
+	# if there is any .tar.gz or .tgz file inside $install_dir, remove it
+	find "$install_dir" -maxdepth 1 -type f \( -name "*.tar.gz" -o -name "*.tgz" \) -exec rm -f {} \;
 
 	local cmd_end="$SECONDS"
 	elapsed=$((cmd_end - cmd_start))

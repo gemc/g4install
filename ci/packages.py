@@ -80,7 +80,7 @@ pkg_sections = {
 def debian_adjustments(pkgs: list[str]) -> list[str]:
 	# replace Ubuntu’s t64 Qt libs with Debian names
 	rep = {
-		"libqt6opengl6t64":        "libqt6opengl6",
+		"libqt6opengl6t64":        "libqt6opengl6-dev",
 		"libqt6openglwidgets6t64": "libqt6openglwidgets6",
 		"libmysqlclient-dev":      "libmariadb-dev"
 	}

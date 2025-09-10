@@ -8,7 +8,6 @@ on:
   pull_request:          # PRs: build only (no push)
 
 jobs:
-
   overview:
     name: Workflow Overview
     runs-on: ubuntu-latest
@@ -53,7 +52,7 @@ jobs:
   # Per-arch build jobs
   # ===========================
   build_amd64:
-    name: Build (amd64) from ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: Build amd64 from ${{ matrix.image }}:${{ matrix.image_tag }}
     needs: [ overview, discover ]
     runs-on: ubuntu-latest
     permissions:
@@ -116,7 +115,7 @@ jobs:
           cache-from: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64
           cache-to: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64,mode=max
 
-      - name: Summary (amd64)
+      - name: Summary
         if: ${{ always() }}
         shell: bash
         env:
@@ -135,7 +134,7 @@ jobs:
             echo ""
             echo "### Run interactive shell"
             echo '```bash'
-            echo "docker run --rm -it \$VPLATFORM ${IMAGE}:${TAG} bash -l"
+            echo "docker run --rm -it \$VPLATFORM ${IMAGE}:${TAG} bash -li"
             echo '```'
             echo ""
             echo "### Run with VNC/noVNC"
@@ -156,7 +155,7 @@ jobs:
 
   # build_arm64 job header
   build_arm64:
-    name: Build (arm64) ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: Build arm64 from ${{ matrix.image }}:${{ matrix.image_tag }}
     needs: [overview, discover]
     runs-on: ubuntu-24.04-arm   # <— use native ARM64 runner
     permissions:
@@ -235,7 +234,7 @@ jobs:
   # Manifest stitch (same matrix)
   # ===========================
   manifest:
-    name: Create manifest ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: Manifest for ${{ matrix.image }}
     needs: [ build_amd64, build_arm64, discover ]
     runs-on: ubuntu-latest
     # If arm64 was skipped (e.g., archlinux), still publish amd64-only manifest.
@@ -281,7 +280,7 @@ jobs:
         run: |
           : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/manifest_summary.md}"
           {
-            echo "## Published manifest: \`${IMAGE}:${TAG}\`"
+            echo "## \`${IMAGE}:${TAG}\`"
             echo ""
             echo "Includes:"
             if docker buildx imagetools inspect "${IMAGE}:${TAG}-amd64" >/dev/null 2>&1; then echo "- amd64"; fi
@@ -294,7 +293,14 @@ jobs:
             echo ""
             echo "### Run (interactive)"
             echo '```bash'
-            echo "docker run --rm -it \$VPLATFORM ${IMAGE}:${TAG} bash -l"
+            echo "docker run --rm -it \$VPLATFORM ${IMAGE}:${TAG} bash -li"
+            echo '```'
+            echo ""
+            echo "### Run with VNC/noVNC"
+            echo "_VNC → localhost:5900 (password: change-me)_"
+            echo "_noVNC → http://localhost:6080/vnc.html (password: change-me)_"
+            echo '```bash'
+            echo "docker run --rm -it \$VPLATFORM \$VPORTS \$VNC_BIND \$VNC_PASS ${IMAGE}:${TAG}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 

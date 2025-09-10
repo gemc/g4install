@@ -144,8 +144,6 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	if image != "archlinux":
 		commands += install_clhep(clhep_version)
 		commands += install_xercesc(xercesc_version)
-		if image != "debian":
-			commands += install_geant4(geant4_version)
 
 	return commands
 
