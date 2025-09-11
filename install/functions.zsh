@@ -158,7 +158,10 @@ cmake_build_and_install() {
 	echo " > build_dir:     $build_dir"
 	echo " > install_dir:   $install_dir"
 	echo " > cmake_options: $cmake_options"
-
+	# if delete_source is set, do not delete the source directory
+	if [ -z "$do_not_delete_source" ]; then
+		echo " > Deleting source directory $source_dir after installation"
+	fi
 	local cmd_start="$SECONDS"
 
 	# install_dir is the base directory containing $build_dir
@@ -213,16 +216,17 @@ cmake_build_and_install() {
 	# cleanup
 	cd # so that we do not delete pwd
 	echo "$magenta > Cleaning up...$reset"
+	echo "$magenta > Deleting build directory $build_dir...$reset"
 	rm -rf "$build_dir"
 
 	# if delete_source is set, do not delete the source directory
 	if [ -z "$do_not_delete_source" ]; then
-		echo "$magenta > Deleting source directory...$reset"
+		echo "$magenta > Deleting source directory $source_dir...$reset"
 		rm -rf "$source_dir"
 	fi
 
 	# if there is any .tar.gz or .tgz file inside $install_dir, remove it
-	find "$install_dir" -maxdepth 1 -type f \( -name "*.tar.gz" -o -name "*.tgz" \) -exec rm -f {} \;
+	find "$install_dir" -maxdepth 1 -type f \( -name "*.tar.gz" -o -name "*.tgz" \) -exec echo "Removing:" {} \; -exec rm -f {} \;
 
 	local cmd_end="$SECONDS"
 	elapsed=$((cmd_end - cmd_start))
