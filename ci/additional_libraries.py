@@ -140,10 +140,10 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	commands += install_meson(meson_version)
 	commands += install_novnc(novnc_version)
 	commands += install_g4installer(False, geant4_version)
+	commands += install_clhep(clhep_version)
+	commands += install_xercesc(xercesc_version)
 
 	if image != "archlinux":
-		commands += install_clhep(clhep_version)
-		commands += install_xercesc(xercesc_version)
 		commands += install_geant4(geant4_version)
 
 	return commands

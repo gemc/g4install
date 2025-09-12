@@ -26,8 +26,8 @@ pkg_sections = {
 		"archlinux": ["python", "python-pip", "ninja"],
 	},
 	"x11_1":          {
-		"fedora":    ["mesa-libGLU-devel", "libX11-devel", "libXpm-devel", "libXft-devel"],
-		"debian":    ["libglu1-mesa-dev", "libx11-dev", "libxpm-dev", "libxft-dev"],
+		"fedora":    ["mesa-libGL-devel", "mesa-libGLU-devel", "libX11-devel", "libXpm-devel", "libXft-devel"],
+		"debian":    ["libgl1-mesa-dev",  "libglu1-mesa-dev", "libx11-dev", "libxpm-dev", "libxft-dev"],
 		"archlinux": ["mesa", "glu", "libx11", "libxpm", "libxft"],
 	},
 	"x11_2":          {
