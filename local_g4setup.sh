@@ -4,9 +4,7 @@ if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; t
   for f in \
     /usr/share/Modules/init/sh \
     /usr/share/modules/init/sh \
-    /usr/share/lmod/lmod/init/sh \
-    /etc/profile.d/lmod.sh \
-    /etc/profile.d/modules.sh
+    /etc/profile.d/env-modules.sh
   do
     [[ -r "$f" ]] && source "$f" && break
   done
