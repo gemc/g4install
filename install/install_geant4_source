@@ -12,6 +12,7 @@ source_dir=$G4INSTALL/source
 build_dir=$G4INSTALL/build
 base_dir=$G4INSTALL
 filename="https://gitlab.cern.ch/geant4/geant4/-/archive/v$G4_VERSION/geant4-v$G4_VERSION.tar.gz"
+filename="https://github.com/Geant4/geant4/archive/refs/tags/v$G4_VERSION.tar.gz"
 tar_strip=1 # in the tarball, the source is inside VERSION/CLHEP
 
 # Full list of options and explanation:
