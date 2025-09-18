@@ -80,7 +80,7 @@ RUN pacman -Syu --noconfirm \
     && useradd -m -G wheel -s /bin/bash build \
     && echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-build \
     && chmod 440 /etc/sudoers.d/99-build \
-    && su - build -c 'git clone https://aur.archlinux.org/env-modules.git && cd env-modules && updpkgsums && makepkg -si --noconfirm --needed' \
+    && su - build -c 'git clone http://aur.archlinux.org/env-modules.git && cd env-modules && updpkgsums && makepkg -si --noconfirm --needed' \
     && pacman -U --noconfirm /home/build/env-modules/*.pkg.tar.zst
 """.lstrip()
 
