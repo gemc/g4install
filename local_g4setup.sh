@@ -19,5 +19,5 @@ alias gista='git status -s'
 
 set autolist
 set mark-directories on
-complete -r
+# complete -r
 

@@ -46,6 +46,7 @@ cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmak
 # -DDGEANT4_USE_USOLIDS=ON, requires vecgeom installed
 # -DGEANT4_INSTALL_PACKAGE_CACHE=OFF
 # -DBUILD_SHARED_LIBS=OFF
+# -DGEANT4_USE_XM=OFF    # on macos
 
 source "$(dirname "$(readlink -f "$0")")"/functions.zsh
 log_general geant4 "$G4_VERSION" "$filename" "$base_dir"

@@ -129,10 +129,14 @@ def packages_install_command(image: str) -> str:
 		command += f"RUN dnf install -y --allowerasing {packages}"
 
 	elif family == "debian":
+		command += "ENV DEBIAN_FRONTEND=noninteractive\n"
+		command += "ENV DEBCONF_NONINTERACTIVE_SEEN=true\n"
+		command += "ENV TZ=UTC\n"
+
 		command += (
 				"RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime \\\n"
 				" && apt-get update \\\n"
-				"    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata "
+				"    && apt-get install -y --no-install-recommends tzdata "
 				+ packages
 		)
 

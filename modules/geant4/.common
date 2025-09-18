@@ -16,8 +16,6 @@ prepend-path      PKG_CONFIG_PATH $ilib/pkgconfig
 setenv G4_VERSION $version
 setenv G4INSTALL  $dir
 setenv G4LIB      $ilib
-setenv G4DATA_DIR $dir/data/Geant4-$version/data
-
 
 proc ModulesTest { } {
 	set retcode 1
