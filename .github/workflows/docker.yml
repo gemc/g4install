@@ -27,11 +27,12 @@ jobs:
             echo "Repository: [g4install images](https://github.com/gemc/g4install/pkgs/container/g4install)"
             echo ""
             echo ""
-            echo "Set these convenience variables to run docker (choose your own password)"
+            echo "Set these convenience variables to run docker on arm64 (choose your own password)"
             echo '```bash'
             echo 'VPORTS=(-p 6080:6080 -p 5900:5900)'
             echo 'VNC_PASS=(-e X11VNC_PASSWORD=change-me)'
             echo 'VNC_BIND=(-e VNC_BIND=0.0.0.0)'
+            echo 'VPLATFORM="--platform=linux/arm64"'
             echo '```'
             echo ""
             echo "For amd64 CPUS (for example, MacOS silicon):"
@@ -121,8 +122,8 @@ jobs:
           # Add -amd64 suffix to the arch-specific image tag
           tags: ${{ steps.meta.outputs.tags }}-amd64
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64
-          cache-to: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64,mode=max
+          #cache-from: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64
+          #cache-to: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64,mode=max
 
       - name: Summary
         if: ${{ always() }}
@@ -236,8 +237,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}-arm64
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ needs.discover.outputs.image }}:cache-arm64
-          cache-to: type=registry,ref=${{ needs.discover.outputs.image }}:cache-arm64,mode=max
+          #cache-from: type=registry,ref=${{ needs.discover.outputs.image }}:cache-arm64
+          #cache-to: type=registry,ref=${{ needs.discover.outputs.image }}:cache-arm64,mode=max
 
   # ===========================
   # Manifest stitch (same matrix)

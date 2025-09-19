@@ -62,15 +62,16 @@ def install_jlab_ca(image: str) -> str:
 	family = map_family(image)
 
 	commands = "\n# Install JLab CA\n"
-
+	# notice: refresh the JLab CA certs in ci/assets/JLabCA.crt
+	# from https://pki.jlab.org/JLabCA.crt in case of expiration
 	if family == "fedora":
-		commands += "ADD https://pki.jlab.org/JLabCA.crt /etc/pki/ca-trust/source/anchors/JLabCA.crt\n"
+		commands += "COPY ci/assets/JLabCA.crt /etc/pki/ca-trust/source/anchors/JLabCA.crt\n"
 		commands += "RUN update-ca-trust\n\n"
 	elif family == "debian":
-		commands += "ADD https://pki.jlab.org/JLabCA.crt /usr/local/share/ca-certificates/JLabCA.crt\n"
+		commands += "COPY ci/assets/JLabCA.crt /usr/local/share/ca-certificates/JLabCA.crt\n"
 		commands += "RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && update-ca-certificates\n\n"
 	elif family == "archlinux":
-		commands += "ADD https://pki.jlab.org/JLabCA.crt /etc/ca-certificates/trust-source/anchors/JLabCA.crt\n"
+		commands += "COPY ci/assets/JLabCA.crt /etc/ca-certificates/trust-source/anchors/JLabCA.crt\n"
 		commands += "RUN trust extract-compat\n\n"
 
 	return commands

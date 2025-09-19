@@ -22,7 +22,7 @@ def install_root_from_source(image: str, root_version: str) -> str:
 	commands += f'RUN cd {root_install_dir} \\\n'
 	commands += f'    && git clone -c advice.detachedHead=false --single-branch --depth=1 -b {root_version} {root_github} root_src  \\\n'
 	commands += f'    && mkdir root_build root && cd root_build \\\n'
-	commands += f'    && cmake {root_skip} -DCMAKE_INSTALL_PREFIX=../root ../root_src \\\n'
+	commands += f'    && cmake {root_skip} -Dminimal=ON -DCMAKE_INSTALL_PREFIX=../root ../root_src \\\n'
 	commands += f'    && cmake --build . -- install  -j"$(nproc)" \\\n'
 	commands += f'    && echo "cd {root_install_dir}/root/bin ; source thisroot.sh ; cd -" >> {remote_setup_filename()}\n'
 	return commands
