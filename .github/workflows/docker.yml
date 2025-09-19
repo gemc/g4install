@@ -208,7 +208,7 @@ jobs:
           python3 ci/dockerfile_creator.py \
           -i "${{ matrix.image }}" \
           -t "${{ matrix.image_tag }}" \
-          --root-version "${{ matrix.root_tag || '6.36.04' }}" \
+          --root-version "${{ matrix.root_tag || 'v6-36-04' }}" \
           --meson-version "${{ matrix.meson_tag || '1.9.0' }}" \
           --novnc-version "${{ matrix.novnc_tag || 'v1.6.0' }}" \
           > Dockerfile.generated

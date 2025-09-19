@@ -12,12 +12,17 @@ def install_root_from_source(image: str, root_version: str) -> str:
 
 	root_install_dir = '/usr/local'
 	root_github = 'https://github.com/root-project/root.git'
+	features_to_skip = [ 'arrow', 'davix', 'cefweb', 'cocoa', 'cuda', 'fortran', 'pythia8', 'r', 'shadowpw', 'tmva', 'vecgeom', 'xrootd']
+	root_skip = ''
+	for feature in features_to_skip:
+		root_skip += f' -D{feature}=OFF'
+
 	commands = '\n\n'
 	commands += '# root installation from source tarball\n'
 	commands += f'RUN cd {root_install_dir} \\\n'
 	commands += f'    && git clone -c advice.detachedHead=false --single-branch --depth=1 -b {root_version} {root_github} root_src  \\\n'
 	commands += f'    && mkdir root_build root && cd root_build \\\n'
-	commands += f'    && cmake -DCMAKE_INSTALL_PREFIX=../root ../root_src \\\n'
+	commands += f'    && cmake {root_skip} -DCMAKE_INSTALL_PREFIX=../root ../root_src \\\n'
 	commands += f'    && cmake --build . -- install  -j"$(nproc)" \\\n'
 	commands += f'    && echo "cd {root_install_dir}/root/bin ; source thisroot.sh ; cd -" >> {remote_setup_filename()}\n'
 	return commands
