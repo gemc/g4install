@@ -4,26 +4,21 @@ import argparse
 from functions import remote_setup_filename, curl_command, map_family, is_valid_image, sim_home
 
 
-def install_root_tarball(image: str, root_version: str) -> str:
+def install_root_from_source(image: str, root_version: str) -> str:
 	# on fedora lines, we would install from dnf
 	family = map_family(image)
 	if family == "fedora" or family == "archlinux":
 		return ""
 
-	# ubuntu
-	os_name = "ubuntu24.04-x86_64-gcc13.3"
-	if image == "debian":
-		os_name = "debian12-x86_64-gcc12.2"  # adjust to an actual ROOT build name if available
-
-	root_file = f'root_v{root_version}.Linux-{os_name}.tar.gz'
-	root_remote_file = f'https://root.cern/download/{root_file}'
 	root_install_dir = '/usr/local'
+	root_github = 'https://github.com/root-project/root.git'
 	commands = '\n\n'
-	commands += '# root installation using tarball\n'
+	commands += '# root installation from source tarball\n'
 	commands += f'RUN cd {root_install_dir} \\\n'
-	commands += f'    && {curl_command(root_remote_file)}  \\\n'
-	commands += f'    && tar -xzf {root_file} \\\n'
-	commands += f'    && rm {root_file} \\\n'
+	commands += f'    && git clone -c advice.detachedHead=false --single-branch --depth=1 -b {root_version} {root_github} root_src  \\\n'
+	commands += f'    && mkdir root_build root && cd root_build \\\n'
+	commands += f'    && cmake -DCMAKE_INSTALL_PREFIX=../root ../root_src \\\n'
+	commands += f'    && cmake --build . -- install  -j"$(nproc)" \\\n'
 	commands += f'    && echo "cd {root_install_dir}/root/bin ; source thisroot.sh ; cd -" >> {remote_setup_filename()}\n'
 	return commands
 
@@ -60,6 +55,7 @@ def install_novnc(novnc_ver: str) -> str:
 	)
 
 
+# not used
 def install_lmod_on_arch() -> str:
 	return r"""
 # Install Lmod on Arch Linux
@@ -136,7 +132,7 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	commands += f'# ROOT version: {root_version}\n'
 	commands += f'# Meson version: {meson_version}\n'
 	commands += f'# noVNC version: {novnc_version}\n'
-	commands += install_root_tarball(image, root_version)
+	commands += install_root_from_source(image, root_version)
 	commands += install_meson(meson_version)
 	commands += install_novnc(novnc_version)
 	commands += install_g4installer(False, geant4_version)

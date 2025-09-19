@@ -45,7 +45,7 @@ def copy_setup_file(image: str) -> str:
 	commands += "# Create local setup file\n"
 	commands += f"COPY {local_setup_file} {remote_setup_file} \n"
 	commands += f"COPY ci/novnc/start-novnc.sh {remote_novnc_startup_script()}\n"
-	commands += f"RUN install -d -m 0755 /usr/local/bin/start-novnc.d"
+	commands += f"RUN install -d -m 0755 /usr/local/bin/start-novnc.d\n"
 
 	family = map_family(image)
 	if family == "fedora":
@@ -134,8 +134,8 @@ def main():
 		help="Base image tags (e.g., 40 for fedora, 24.04 for ubuntu, etc)"
 	)
 	parser.add_argument(
-		"--root-version", default="6.36.04",
-		help="Version of ROOT to install (default: 6.36.04)"
+		"--root-version", default="v6-36-04",
+		help="Version of ROOT to install (default: v6-36-04)"
 	)
 	parser.add_argument(
 		"--meson-version", default="1.9.0",

@@ -208,7 +208,7 @@ distro_start_vnc_server() {
     fi
     if ! pgrep -x x11vnc >/dev/null 2>&1; then
       log "Launching x11vnc on ${VNC_BIND}:${VNC_PORT}"
-      x11vnc -display "$DISPLAY" -rfbport "$VNC_PORT" $bind_opt -forever -shared -acceptclipboard -sendclipboard $pass_opt -bg -quiet
+      x11vnc -display "$DISPLAY" -rfbport "$VNC_PORT" $bind_opt -forever -shared $pass_opt -bg -quiet
     fi
     wait_for_vnc
     return
