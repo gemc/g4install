@@ -7,7 +7,7 @@ get_archlinux_latest() { echo "latest"; }
 get_almalinux_latest() { echo "9.4"; }
 get_debian_latest()    { echo "12"; }
 get_geant4_tag()       { echo "11.3.2"; }
-get_root_tag()         { echo "6.36.04"; }
+get_root_tag()         { echo "v6-36-04"; }
 get_meson_tag()        { echo "1.9.0"; }
 get_novnc_tag()        { echo "v1.6.0"; }
 

@@ -1,6 +1,12 @@
 # Build & Publish GitHub Container Registry (GHCR) Images
 name: Build Geant4 Images
 
+# default varsions. This is overwritten by distros_tags.sh
+env:
+  ROOT_TAG: v6-36-04      # default ROOT tag
+  MESON_TAG: 1.9.0        # default Meson version
+  NOVNC_TAG: v1.6.0       # default noVNC tag
+
 on:
   push:
     branches: [ main ]   # publish on main updates
@@ -94,9 +100,9 @@ jobs:
           python3 ci/dockerfile_creator.py \
           -i "${{ matrix.image }}" \
           -t "${{ matrix.image_tag }}" \
-          --root-version "${{ matrix.root_tag || '6.36.04' }}" \
-          --meson-version "${{ matrix.meson_tag || '1.9.0' }}" \
-          --novnc-version "${{ matrix.novnc_tag || 'v1.6.0' }}" \
+          --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
+          --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
+          --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
@@ -208,9 +214,9 @@ jobs:
           python3 ci/dockerfile_creator.py \
           -i "${{ matrix.image }}" \
           -t "${{ matrix.image_tag }}" \
-          --root-version "${{ matrix.root_tag || 'v6-36-04' }}" \
-          --meson-version "${{ matrix.meson_tag || '1.9.0' }}" \
-          --novnc-version "${{ matrix.novnc_tag || 'v1.6.0' }}" \
+          --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
+          --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
+          --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
