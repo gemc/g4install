@@ -18,7 +18,7 @@ trap 'code=$?; echo "[start-novnc] ERROR at line $LINENO: $BASH_COMMAND (exit $c
 
 # --------------------- Config knobs (env-tweakable) ---------------------
 : "${DISPLAY:=:1}"                  # Xvfb display number
-: "${GEOMETRY:=1280x800}"           # WIDTHxHEIGHT
+: "${GEOMETRY:=1920x1200}"           # WIDTHxHEIGHT
 : "${DEPTH:=24}"                    # color depth
 : "${DPI:=96}"                      # logical DPI
 : "${VNC_PORT:=5900}"               # native VNC port inside container
