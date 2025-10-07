@@ -25,9 +25,7 @@ jobs:
           {
             echo "# Geant4 Images — Overview"
             echo "Repository: [g4install images](https://github.com/gemc/g4install/pkgs/container/g4install)"
-            echo "Except for archlinux (amd64-only), all images are built for both amd64 and arm64 architectures."
-            echo ""
-            echo ""
+            echo "Except for archlinux (amd64-only), all images are built for both the *amd64* and *arm64* architectures."
             echo ""
             echo ""
             echo "Set these convenience variables for the command lines below (choose your own password)"

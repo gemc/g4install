@@ -117,8 +117,9 @@ XRS
 start_xvfb() {
 	mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 	log "Launching Xvfb on ${DISPLAY} (${GEOMETRY}x${DEPTH}, dpi ${DPI})"
-	"$XVFB_BIN" "$DISPLAY" -screen 0 "${GEOMETRY}x${DEPTH}" -dpi "${DPI}" \
-		+extension RANDR +extension GLX +iglx &
+"$XVFB_BIN" "$DISPLAY" -screen 0 "${GEOMETRY}x${DEPTH}" -dpi "${DPI}" \
+  -quiet +extension RANDR +extension GLX +iglx &
+
 	wait_for_x_socket
 }
 
@@ -146,7 +147,6 @@ start_pretty_desktop() {
 		fi
 	done
 	apply_xterm_theme
-	command -v setxkbmap >/dev/null 2>&1 && DISPLAY="$DISPLAY" setxkbmap -layout us || true
 
 	if [ -n "${AUTOSTART:-}" ] && command -v xterm >/dev/null 2>&1; then
 		log "Autostart: $AUTOSTART"

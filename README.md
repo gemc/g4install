@@ -3,13 +3,15 @@
 This repository publish docker containers with Geant4 installations
 
 
-## Base images 
+## Built Images 
 
- - fedora
- - ubuntu
- - arch
- - almalinux
- - debian
+|    base    | version |  architecture |
+|:----------:|--------:|--------------:|
+|   ubuntu   |   24.04 |  amd64, arm64 |
+|   fedora   |      40 |  amd64, arm64 |
+| almalinux  |     9.4 |  amd64, arm64 |
+|   debian   |      12 |  amd64, arm64 |
+| archlinux  |  latest |         amd64 |
 
 
 ## Software Tags
@@ -20,5 +22,4 @@ This repository publish docker containers with Geant4 installations
  - noVNC: v1.6.0
 
 
-## Examples:
 

@@ -60,9 +60,9 @@ pkg_sections = {
 		"archlinux": ["xterm", "tigervnc", "openbox", "ttf-dejavu"],
 	},
 	"qt6":            {
-		"fedora":    ["qt6-qtbase-devel"],
-		"debian":    ["qt6-base-dev", "libqt6opengl6t64", "libqt6openglwidgets6t64", "qt6-base-dev-tools"],
-		"archlinux": ["qt6-base"],
+		"fedora":    ["qt6-qtbase-devel", "qt6-qtsvg", "qt6-qtsvg-devel"],
+		"debian":    ["qt6-base-dev", "libqt6opengl6t64", "libqt6openglwidgets6t64", "qt6-base-dev-tools", "libqt6svg6",  "qt6-svg-dev"],
+		"archlinux": ["qt6-base", "qt6-svg"],
 	},
 	"root":           {
 		"fedora":    ["root"],
