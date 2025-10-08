@@ -115,13 +115,18 @@ XRS
 
 # Start Xvfb display server
 start_xvfb() {
-	mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
-	log "Launching Xvfb on ${DISPLAY} (${GEOMETRY}x${DEPTH}, dpi ${DPI})"
-"$XVFB_BIN" "$DISPLAY" -screen 0 "${GEOMETRY}x${DEPTH}" -dpi "${DPI}" \
-  -quiet +extension RANDR +extension GLX +iglx &
-
-	wait_for_x_socket
+  mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+  log "Launching Xvfb on ${DISPLAY} (${GEOMETRY}x${DEPTH}, dpi ${DPI})"
+  if [ "${DEBUG:-0}" = "1" ]; then
+    "$XVFB_BIN" "$DISPLAY" -screen 0 "${GEOMETRY}x${DEPTH}" -dpi "${DPI}" \
+      +extension RANDR +extension GLX +iglx &
+  else
+    "$XVFB_BIN" "$DISPLAY" -screen 0 "${GEOMETRY}x${DEPTH}" -dpi "${DPI}" \
+      +extension RANDR +extension GLX +iglx >/tmp/xvfb.log 2>&1 &
+  fi
+  wait_for_x_socket
 }
+
 
 # Start a minimal WM/panel if available (prettier than bare Xvfb)
 start_pretty_desktop() {
