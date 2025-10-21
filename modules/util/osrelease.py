@@ -4,6 +4,7 @@ import platform
 import re
 import shutil
 import subprocess
+from typing import Dict
 
 def run(cmd):
     try:
@@ -13,23 +14,18 @@ def run(cmd):
         return ""
 
 def parse_major(ver: str) -> str:
-    """
-    Return the leading integer portion of a version string (before the first dot).
-    e.g. "24.04" -> "24", "9" -> "9", "" -> "".
-    """
+    """Return the leading integer portion of a version string (before the first dot)."""
     if not ver:
         return ""
     m = re.search(r"\d+", ver)
     return m.group(0) if m else ""
 
-def read_os_release():
-    """
-    Parse /etc/os-release into a dict. Returns {} if not present.
-    """
+def read_os_release() -> Dict[str, str]:
+    """Parse /etc/os-release into a dict. Returns {} if not present."""
     path = "/etc/os-release"
-    data = {}
+    data: Dict[str, str] = {}
     if os.path.exists(path):
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith("#") or "=" not in line:
@@ -40,31 +36,23 @@ def read_os_release():
                 data[k] = v
     return data
 
-def linux_os_version():
+def linux_os_version() -> str:
     osr = read_os_release()
-    # Fallbacks if /etc/os-release is missing (rare)
+
     if not osr:
-        # Try Red Hat style
+        # Fallbacks if /etc/os-release is missing (rare)
         rh_path = "/etc/redhat-release"
         if os.path.exists(rh_path):
-            txt = open(rh_path).read().strip()
-            # Examples:
-            # "Fedora release 40 (Forty)"
-            # "AlmaLinux release 9.4 (Seafoam Ocelot)"
-            # "Red Hat Enterprise Linux release 9.3 (Plow)"
+            txt = open(rh_path, encoding="utf-8").read().strip()
             low = txt.lower()
-            if low.startswith("fedora"):
-                maj = parse_major(txt)
-                return f"fedora{maj}"
-            if "almalinux" in low:
-                maj = parse_major(txt)
-                return f"almalinux{maj}"
-            if low.startswith("red hat enterprise"):
-                maj = parse_major(txt)
-                return f"rhel{maj}"
-            # Generic fallback
             maj = parse_major(txt)
-            base = txt.split()[0].lower()
+            if low.startswith("fedora"):
+                return f"fedora{maj or ''}".rstrip()
+            if "almalinux" in low:
+                return f"almalinux{maj or ''}".rstrip()
+            if low.startswith("red hat enterprise"):
+                return f"rhel{maj or ''}".rstrip()
+            base = (txt.split() or ["linux"])[0].lower()
             return f"{base}{maj}" if maj else base
         raise ValueError("Unsupported linux version: missing /etc/os-release")
 
@@ -76,11 +64,25 @@ def linux_os_version():
     if id_ in {"ubuntu", "debian", "fedora", "almalinux", "rhel", "centos", "rocky"}:
         return f"{id_}{maj}" if maj else id_
     if id_ == "arch":
-        # Arch is rolling; usually no VERSION_ID. Keep it simple.
+        # Arch is rolling; usually no VERSION_ID.
         return "arch"
-    # Some derivatives may not be directly listed above:
-    # Try to use ID with major if we have one, else just ID.
-    return f"{id_}{maj}" if maj else id_
+
+    return f"{id_}{maj}" if maj else id_ or "linux"
+
+def parse_clang_major(text: str) -> str:
+    # Matches both Apple clang and LLVM clang outputs
+    m = re.search(r"\bclang(?:[-\w]*)?\s+version\s+(\d+)", text, re.IGNORECASE)
+    return m.group(1) if m else ""
+
+def parse_gcc_major(text: str) -> str:
+    # Try common formats first
+    # e.g. "gcc (GCC) 14.2.1 ..." or "gcc (Ubuntu 13.2.0-23ubuntu3) 13.2.0"
+    m = re.search(r"\bgcc\b.*?\b(\d+)\.(\d+)", text, re.IGNORECASE)
+    if m:
+        return m.group(1)
+    # Fallback: first integer that looks like a major before a dot
+    m = re.search(r"\b(\d+)\.\d+", text)
+    return m.group(1) if m else ""
 
 def compiler_tag(system_name: str) -> str:
     """
@@ -89,34 +91,51 @@ def compiler_tag(system_name: str) -> str:
     """
     if system_name == "Darwin":
         out = run(["clang", "--version"])
-        # Usually: "Apple clang version 15.0.0 (clang-1500.1.0.2.5)"
-        m = re.search(r"\bclang[^ ]*\s+version\s+(\d+)", out)
-        major = m.group(1) if m else ""
+        major = parse_clang_major(out)
         return f"clang{major}" if major else "clang"
     else:
         if shutil.which("gcc"):
             out = run(["gcc", "--version"])
-            # Usually: "gcc (GCC) 14.2.1 20240805 (Red Hat 14.2.1-1)"
-            m = re.search(r"\bgcc.*\)\s+(\d+)", out, re.IGNORECASE) or \
-                re.search(r"\bGCC\)?\s+(\d+)", out)
-            # Fallback: first number in output
-            if not m:
-                m = re.search(r"\b(\d+)\.\d+", out)
-            major = m.group(1) if m else ""
+            major = parse_gcc_major(out)
             return f"gcc{major}" if major else "gcc"
-        elif shutil.which("clang"):
+        if shutil.which("clang"):
             out = run(["clang", "--version"])
-            m = re.search(r"\bclang[^ ]*\s+version\s+(\d+)", out)
-            major = m.group(1) if m else ""
+            major = parse_clang_major(out)
             return f"clang{major}" if major else "clang"
-        else:
-            # Last resort: unknown compiler
-            return "compiler"
+        return "compiler"
+
+def arch_tag() -> str:
+    """
+    Normalize platform.machine() to 'x86_64' or 'arm64'.
+    """
+    mach = (platform.machine() or "").lower()
+
+    # Common x86_64 identifiers
+    if mach in {"x86_64", "amd64", "x64"}:
+        return "x86_64"
+
+    # Common ARM64 identifiers
+    if mach in {"aarch64", "arm64"}:
+        return "arm64"
+
+    # Some platforms may report things like 'armv8', 'armv7l' — treat armv8 as arm64, others fallback
+    if mach.startswith("armv8"):
+        return "arm64"
+
+    # Last-resort: try uname -m
+    uname_m = run(["uname", "-m"]).lower()
+    if uname_m in {"x86_64", "amd64"}:
+        return "x86_64"
+    if uname_m in {"aarch64", "arm64"}:
+        return "arm64"
+
+    # Default to x86_64 if unknown (safer default for most build farms)
+    return "x86_64"
 
 def main():
     sysname = platform.system()
+
     if sysname == "Darwin":
-        # macOS: "macosx<major>"
         mac_ver = platform.mac_ver()[0]  # e.g. "14.5"
         mac_major = mac_ver.split(".")[0] if mac_ver else ""
         os_version = f"macosx{mac_major}" if mac_major else "macosx"
@@ -127,7 +146,8 @@ def main():
     else:
         raise ValueError(f"Unsupported platform: {sysname}")
 
-    print(f"{os_version}-{comp}")
+    arch = arch_tag()
+    print(f"{os_version}-{comp}-{arch}")
 
 if __name__ == "__main__":
     main()
