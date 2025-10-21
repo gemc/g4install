@@ -57,7 +57,7 @@ def jlab_certificate() -> str:
 
 def sim_home(is_cvfms: bool) -> str:
 	if is_cvfms:
-		return "/cvmfs/oasis.opensciencegrid.org/geant4"
+		return "/cvmfs/oasis.opensciencegrid.org/geant4/g4install"
 	else:
 		return "/opt/software/"
 
