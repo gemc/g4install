@@ -5,13 +5,13 @@ This repository publish docker containers with Geant4 installations
 
 ## Built Images 
 
-|    base    | version |  architecture |
-|:----------:|--------:|--------------:|
-|   ubuntu   |   24.04 |  amd64, arm64 |
-|   fedora   |      40 |  amd64, arm64 |
-| almalinux  |     9.4 |  amd64, arm64 |
-|   debian   |      12 |  amd64, arm64 |
-| archlinux  |  latest |         amd64 |
+|        OS        |                        Pull Command                        | arm64 |  amd64   |
+|:----------------:|:----------------------------------------------------------:|:-----:|:--------:|
+|   ubuntu 24.04   |     docker pull ghcr.io/gemc/g4install:11.3.2-ubuntu24     |  yes  |   yes    |
+|    fedora 40     |     docker pull ghcr.io/gemc/g4install:11.3.2-fedora40     |  yes  |   yes    |
+|  almalinux 9.4   |   docker pull ghcr.io/gemc/g4install:11.3.2-almalinux9.4   |  yes  |   yes    |
+|    debian 12     |    docker pull ghcr.io/gemc/g4install:11.3.2-debian-12     |  yes  |   yes    |
+| archlinux latest | docker pull ghcr.io/gemc/g4install:11.3.2-archlinux-latest |  no   |   yes    |
 
 
 ## Software Tags
