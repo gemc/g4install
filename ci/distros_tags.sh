@@ -1,19 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-get_geant4_tag()       { echo "11.3.2"; }
-get_root_tag()         { echo "v6-36-04"; }
-get_meson_tag()        { echo "1.9.0"; }
-get_novnc_tag()        { echo "v1.6.0"; }
-
-# Single source of truth (order preserved)
-OS_VERSIONS=(
-  "ubuntu=24.04"
-  "fedora=40"
-  "almalinux=9.4"
-  "debian=12"
-  "archlinux=latest"
-)
+source "$(dirname "$0")/env.sh"
 
 build_matrix() {
   local g4 root meson novnc
@@ -40,8 +28,7 @@ build_matrix() {
   fi
 }
 
-# portable lowercasing (works on old bash, dash, zsh)
-lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+
 
 # Build a clean GHCR image ref: ghcr.io/<owner>/<repo>
 build_image_ref() {
