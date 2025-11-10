@@ -1,9 +1,11 @@
 #%Module
-module-whatis Geant4 Monte-Carlo (GEMC), https://gemc.github.io/home
 
 set version [file tail [module-info version [module-info name]]]
-set gname gemc
 
-prereq geant4/dev
+prereq clhep/2.4.7.1
+prereq xercesc/3.3.0
 
 source [file dirname $ModulesCurrentModulefile]/.common
+
+# latest on https://gitlab.cern.ch/geant4/geant4-dev
+setenv G4DEVTAG geant4-11-04-cand-00

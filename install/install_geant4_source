@@ -13,19 +13,19 @@ build_dir=$G4INSTALL/build
 base_dir=$G4INSTALL
 filename="https://gitlab.cern.ch/geant4/geant4/-/archive/v$G4_VERSION/geant4-v$G4_VERSION.tar.gz"
 filename="https://github.com/Geant4/geant4/archive/refs/tags/v$G4_VERSION.tar.gz"
-tar_strip=1 # in the tarball, the source is inside VERSION/CLHEP
+dev_repo="https://gitlab.cern.ch/geant4/geant4-dev"
 
 # Full list of options and explanation:
 # https://geant4-userdoc.web.cern.ch/UsersGuides/InstallationGuide/html/index.html
 
 # assuming qmake is installed and in the path
-if command -v qmake6 &> /dev/null; then
-    qmake_path=$(command -v qmake6)
-elif command -v qmake &> /dev/null; then
-    qmake_path=$(command -v qmake)
+if command -v qmake6 &>/dev/null; then
+	qmake_path=$(command -v qmake6)
+elif command -v qmake &>/dev/null; then
+	qmake_path=$(command -v qmake)
 else
-    echo "Error: qmake or qmake6 not found. Please install Qt development tools."
-    exit 1
+	echo "Error: qmake or qmake6 not found. Please install Qt development tools."
+	exit 1
 fi
 
 echo "$magenta > QMake found at: $qmake_path$reset"
@@ -49,12 +49,18 @@ cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmak
 # -DGEANT4_USE_XM=OFF    # on macos
 
 source "$(dirname "$(readlink -f "$0")")"/functions.zsh
-log_general geant4 "$G4_VERSION" "$filename" "$base_dir"
-unpack_source_in_directory_from_url "$filename" "$source_dir" "$tar_strip"
-cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
 
+# dev version: clone_tag
+if [[ $what_version == "dev" ]]; then
+	log_general geant4 "$G4DEVTAG" "$dev_repo" "$base_dir"
+	clone_tag "$dev_repo" "$G4DEVTAG" "$source_dir"
+	cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
+else
+	tar_strip=1 # in the tarball, the source is inside VERSION/CLHEP
+	log_general geant4 "$G4_VERSION" "$filename" "$base_dir"
+	unpack_source_in_directory_from_url "$filename" "$source_dir" "$tar_strip"
+	cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
+fi
 echo "$magenta > $what installation completed.$reset"
 module test geant4/$what_version
 exit $?
-
-

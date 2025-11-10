@@ -43,7 +43,6 @@ log_general() {
 	echo " > Package:                 $this_package version $version"
 	echo " > Origin:                  $filename"
 	echo " > Destination:             $base_dir"
-	echo " > Release:                 $OSRELEASE"
 	echo " > Multithread Compilation: $n_cpu"
 	echo
 }
@@ -131,7 +130,7 @@ clone_tag() {
 	echo
 	echo " > url: $url"
 	echo " > clone_tag: " $version
-	echo " > in directory: $install_dir"
+	echo " > in directory: $destination_dir"
 
 	git clone -c advice.detachedHead=false --recurse-submodules --single-branch -b $version "$url" "$destination_dir"
 	echo
