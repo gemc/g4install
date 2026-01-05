@@ -1,17 +1,6 @@
 #!/bin/zsh
 
 # on distros installation module dir is
-if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; then
-  for f in \
-    /usr/share/Modules/init/zsh \
-    /usr/share/modules/init/zsh \
-    /usr/share/lmod/lmod/init/zsh \
-    /etc/profile.d/env-modules.sh \
-    /etc/profile.d/modules.zsh
-  do
-    [[ -r "$f" ]] && source "$f" && break
-  done
-fi
 
 red=$(   tput setaf 1)
 green=$( tput setaf 2)
@@ -34,17 +23,102 @@ whine_and_quit() {
 	exit 1
 }
 
+# source common init scripts including Homebrew paths, and
+# if module is still an alias (or missing), create a real zsh function using LMOD_CMD or modulecmd.
+ensure_modules() {
+	emulate -L zsh
+
+	# If module is already a function or external command, we're good.
+	local kind
+	kind=$(whence -w module 2>/dev/null || true)
+	if [[ "$kind" == *": function" || "$kind" == *": command" || "$kind" == *": hashed"* ]]; then
+		return 0
+	fi
+
+	# Try site-provided init hooks (plus common Homebrew installs on macOS).
+	local f
+	for f in \
+		${MODULESHOME:+$MODULESHOME/init/zsh} \
+		/etc/profile.d/lmod.sh \
+		/etc/profile.d/modules.sh \
+		/usr/share/lmod/lmod/init/zsh \
+		/usr/share/Modules/init/zsh \
+		/opt/homebrew/opt/lmod/init/zsh \
+		/opt/homebrew/opt/environment-modules/init/zsh \
+		/usr/local/opt/lmod/init/zsh \
+		/usr/local/opt/environment-modules/init/zsh; do
+		[[ -n "$f" && -r "$f" ]] && source "$f" && break
+	done
+
+	# Re-check what we got after sourcing.
+	kind=$(whence -w module 2>/dev/null || true)
+
+	# If we only have an alias (or still nothing), force a real function wrapper.
+	if [[ "$kind" == *": alias" || -z "$kind" ]]; then
+		if [[ -n "${LMOD_CMD:-}" && -x "${LMOD_CMD}" ]]; then
+			module()  { eval "$("${LMOD_CMD}" zsh "$@")"; }
+		elif command -v modulecmd >/dev/null 2>&1; then
+			local  mc
+			mc="$( command -v modulecmd)"
+			module()  { eval "$("${mc}" zsh "$@")"; }
+		fi
+	fi
+
+	# Final verification: must be function or external command.
+	kind=$(whence -w module 2>/dev/null || true)
+	if [[ "$kind" != *": function" && "$kind" != *": command" && "$kind" != *": hashed"* ]]; then
+		print -u2 -- "ERROR: 'module' is not available (or only an alias): ${kind:-not found}"
+		return 1
+	fi
+
+	return 0
+}
+
+prepare_version() {
+	ensure_modules || {
+		print                 -u2 -- "ERROR: cannot initialize modules"
+		return                                                                  1
+	}
+
+	local what="$1"
+	local version
+
+	if [[ $# -eq 2 ]]; then
+		version="$2"
+	else
+		print -u2 -- "ERROR: No $what version given."
+		return 1
+	fi
+
+	print -r -- " > Preparing $what module, version $version"
+
+	module purge || {
+		print               -u2 -- "ERROR: module purge failed"
+		return                                                          1
+	}
+	module load sim_system || {
+		print                         -u2 -- "ERROR: module load sim_system failed"
+		return                                                                              1
+	}
+	module load "$what/$version" || {
+		print                               -u2 -- "ERROR: module load $what/$version failed"
+		return                                                                                        1
+	}
+
+	return 0
+}
+
 log_general() {
 	this_package=$1
 	version=$2
 	filename=$3
 	base_dir=$4
 	echo
-	echo " > Package:                 $this_package version $version"
-	echo " > Origin:                  $filename"
-	echo " > Destination:             $base_dir"
-	echo " > Multithread Compilation: $n_cpu"
-	echo
+	echo "> log_general():"
+	print -r -- " > Package: «$this_package», version: «$version»"
+	print -r -- " > Origin: «$filename»"
+	print -r -- " > Destination: «$base_dir»"
+	print -r -- " > Multithread Compilation: «$n_cpu»"
 }
 
 dir_remove_and_create() {
@@ -54,7 +128,6 @@ dir_remove_and_create() {
 	fi
 	mkdir -p "$dir"
 }
-
 
 # run tar options if not macos, otherwise use gnutar
 gnutar() {
@@ -79,7 +152,6 @@ curl_command() {
 	echo curl options passed: $curl_options
 	curl $=curl_options
 }
-
 
 unpack_source_in_directory_from_url() {
 	url=$1
@@ -117,23 +189,24 @@ unpack_source_in_directory_from_url() {
 	echo "$magenta > gnutar Unpacking ../$filename in $dir$reset"
 	gnutar -zxpf "../$filename" --strip-components="$tar_strip"
 	ls -lrt "$dir"
-	#rm -f "$filename"
+	rm -f "$filename"
 	echo "$magenta > Done with unpacking $filename"
 	echo
 }
 
 clone_tag() {
 	url=$1
-	version=$2
+	tag=$2
 	destination_dir=$3
 
 	echo
-	echo " > url: $url"
-	echo " > clone_tag: " $version
+	echo "> clone_tag():"
+	print -r -- " > url: «$url»"
+	print -r -- " > tag: «$tag»"
 	echo " > in directory: $destination_dir"
+	echo " > command: git clone -c advice.detachedHead=false --recurse-submodules --single-branch -b $tag $url $destination_dir"
 
-	git clone -c advice.detachedHead=false --recurse-submodules --single-branch -b $version "$url" "$destination_dir"
-	echo
+	git clone -c advice.detachedHead=false --recurse-submodules --single-branch -b "$tag" "$url" "$destination_dir" 2>&1 | sed 's/^/   /'
 }
 
 meson_install() {
@@ -153,6 +226,8 @@ cmake_build_and_install() {
 	cmake_options=$4
 	do_not_delete_source=$5
 
+	echo
+	echo "> cmake_build_and_install():"
 	echo " > source_dir:    $source_dir"
 	echo " > build_dir:     $build_dir"
 	echo " > install_dir:   $install_dir"
@@ -169,7 +244,7 @@ cmake_build_and_install() {
 
 	echo
 	echo "$magenta > Configuring cmake...$reset"
-	cmake "$source_dir" -DCMAKE_INSTALL_PREFIX="$install_dir" $=cmake_options 2>"$install_dir/cmake_err.txt" 1>"$install_dir/cmake_log.txt" || whine_and_quit "cmake $source_dir -DCMAKE_INSTALL_PREFIX=$install_dir $=cmake_options"
+	cmake -DCMAKE_INSTALL_PREFIX="$install_dir" $=cmake_options "$source_dir" 2>"$install_dir/cmake_err.txt" 1>"$install_dir/cmake_log.txt" || whine_and_quit "  >>> failed: cmake -DCMAKE_INSTALL_PREFIX=$install_dir $=cmake_options $source_dir"
 	if [ $? -ne 0 ]; then
 		echo "cmake failed. Error Log: "
 		cat $install_dir/cmake_err.txt
@@ -178,8 +253,9 @@ cmake_build_and_install() {
 		echo Test Failure
 		exit 1
 	else
-		echo cmake Successful
-		echo ; echo
+		echo "$blue > cmake Successful"
+		echo
+		echo
 	fi
 
 	echo "$magenta > Done, now building...$reset"
@@ -187,11 +263,12 @@ cmake_build_and_install() {
 	if [ $? -ne 0 ]; then
 		echo "make failed. Build Log: "
 		cat $install_dir/cmake_log.txt
-		echo Test Failure
+		echo "$red Make Failure"
 		exit 1
 	else
-		echo cmake Successful
-		echo ; echo
+		echo "$blue > build Successful"
+		echo
+		echo
 	fi
 
 	echo "$magenta > Done, now installing...$reset"
@@ -199,11 +276,12 @@ cmake_build_and_install() {
 	if [ $? -ne 0 ]; then
 		echo "make install failed. Install Log: "
 		cat $install_dir/install_log.txt
-		echo Test Failure
+		echo "$red Make Install Failure"
 		exit 1
 	else
-		echo cmake Successful
-		echo ; echo
+		echo "$blue > install Successful"
+		echo
+		echo
 	fi
 	echo " Content of $install_dir after installation:"
 	ls -l "$install_dir"
@@ -232,8 +310,6 @@ cmake_build_and_install() {
 
 	echo "$magenta > Compilation and installation completed in $elapsed seconds.$reset"
 }
-
-
 
 function moduleTestResult() {
 	library=$1
