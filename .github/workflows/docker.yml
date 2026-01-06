@@ -103,7 +103,7 @@ jobs:
           --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
           --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
           --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
-          --geant4-version "${{ matrix.geant4_tag || env.NOVNC_TAG }}"
+          --geant4-version "${{ matrix.geant4_tag || env.NOVNC_TAG }}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
@@ -219,7 +219,7 @@ jobs:
           --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
           --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
           --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
-          --geant4-version ${{ matrix.geant4_tag || env.NOVNC_TAG }}"          
+          --geant4-version ${{ matrix.geant4_tag || env.NOVNC_TAG }}" \         
           > Dockerfile.generated
           cat Dockerfile.generated
 
