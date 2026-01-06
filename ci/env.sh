@@ -8,9 +8,10 @@ get_root_tag()         { echo "v6-36-04"; }
 get_meson_tag()        { echo "1.9.0"; }
 get_novnc_tag()        { echo "v1.6.0"; }
 
-geant4_versions_present_on_cvmfs() {
+all_supported_geant4_versions() {
   # space-separated list
-  echo "11.3.2";
+  echo "-11.4.0-11.3.2";
+  echo "-11.4.0-11.3.2";
 }
 
 # Single source of truth (order preserved)

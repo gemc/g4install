@@ -38,7 +38,7 @@ The container libraries are organized in subdirs of `/cvmfs/jlab.opensciencegrid
 
 The following previous versions of Geant4 are also distributed on CVMFS:
 
- - 11.3.2
+ - -11.4.0\n-11.3.2
 
 ## Status Badges:
 
