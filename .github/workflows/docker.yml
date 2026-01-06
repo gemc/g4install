@@ -6,6 +6,7 @@ env:
   ROOT_TAG: v6-36-04      # default ROOT tag
   MESON_TAG: 1.9.0        # default Meson version
   NOVNC_TAG: v1.6.0       # default noVNC tag
+  GEANT4_TAG: 11.4.0      # default geant4 tag
 
 on:
   push:
@@ -61,7 +62,7 @@ jobs:
   # Per-arch build jobs
   # ===========================
   build_amd64:
-    name: Build amd64 from ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: amd64 ${{ matrix.geant4_tag}}" ${{ matrix.image }}:${{ matrix.image_tag }}
     needs: [ overview, discover ]
     runs-on: ubuntu-latest
     permissions:
@@ -103,7 +104,7 @@ jobs:
           --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
           --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
           --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
-          --geant4-version "${{ matrix.geant4_tag || env.NOVNC_TAG }}" \
+          --geant4-version "${{ matrix.geant4_tag || env.GEANT4_TAG }}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
@@ -166,7 +167,7 @@ jobs:
 
   # build_arm64 job header
   build_arm64:
-    name: Build arm64 from ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: arm64 ${{ matrix.geant4_tag}}" ${{ matrix.image }}:${{ matrix.image_tag }}
     needs: [ overview, discover ]
     runs-on: ubuntu-24.04-arm   # <— use native ARM64 runner
     permissions:
@@ -219,7 +220,7 @@ jobs:
           --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
           --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
           --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
-          --geant4-version ${{ matrix.geant4_tag || env.NOVNC_TAG }}" \         
+          --geant4-version "${{ matrix.geant4_tag || env.GEANT4_TAG }}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
