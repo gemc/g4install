@@ -126,7 +126,7 @@ import sys
 def main():
 	parser = argparse.ArgumentParser(
 		description="Print a dockerfile with install commands for a given base image, image tag and various package versions",
-		epilog="Example: ./dockerfile_creator.py -i fedora -t 40",
+		epilog="Example: python3 ./ci/dockerfile_creator.py -i fedora -t 40",
 		add_help=True,
 	)
 

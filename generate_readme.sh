@@ -51,8 +51,7 @@ arch_support() {
 
 # this prints ONLY the Markdown table body (header + rows)
 print_table() {
-    local g4tag
-    g4tag="$(get_geant4_tag)"
+    local g4tag=$1
 
     # header
     cat <<'EOF'
@@ -87,54 +86,49 @@ EOF
 # ------------------------
 
 generate_readme() {
-    local g4tag root_tag meson_tag novnc_tag
-    g4tag="$(get_geant4_tag)"
-    root_tag="$(get_root_tag)"
-    meson_tag="$(get_meson_tag)"
-    novnc_tag="$(get_novnc_tag)"
+    local g4tags latest_g4tag
+
+    g4tags="$(get_geant4_tags)"              # space-separated list
+    latest_g4tag="${g4tags%% *}"             # first token is treated as "latest"
 
     {
         cat <<EOF
-# g4install
 
-## Geant4 Version: ${g4tag}
+> [!NOTE]
+> Supported Geant4 Versions:
+$(all_supported_geant4_versions)
+
+<hr/>
 
 This repository provides:
 
 - module environment for geant4 and installation scripts
-- docker containers with Geant4 for both \`amd64\` and \`arm64\` architectures.
-- cvmfs distribution of Geant4 on \`/cvmfs/jlab.opensciencegrid.org/geant4/g4install\`
+- geant4 docker containers registry for both \`amd64\` and \`arm64\` architectures.
+- CVMFS distribution of Geant4
 
 ## Built Images
 
-Docker Containers Images are created by CI and published to GitHub registry.
+Docker Containers Images are created by CI and published to the
+[GitHub registry](https://github.com/gemc/g4install/pkgs/container/g4install).
 
 - The images are a stitch of both architectures, so docker run does not need additional platform directives or emulations:
 the same command can be used on intel/silicon cpus.
 - The images can be run in batch mode or with GUI (noVNC, using a browser or VNC client).
 
-The images contain, in addition to Geant4 ${g4tag}, the following software:
-
- - Geant4: ${g4tag}
- - ROOT: ${root_tag}
- - Meson: ${meson_tag}
- - noVNC: ${novnc_tag}
+The images contain Geant4 and ROOT.
+Geant4 libraries are distributed on CVMFS at \`/cvmfs/jlab.opensciencegrid.org/geant4/g4install\`
 
 EOF
 
-        # insert the table generated from OS_VERSIONS + g4tag
-        print_table
-        echo
+        # Insert a table for each Geant4 version from get_geant4_tags()
+        for g4tag in $g4tags; do
+        	echo "## Geant4 $g4tag:"
+            print_table "$g4tag"
+            echo "<br/>"
+            echo    # blank line between tables (Markdown readability)
+        done
 
         cat <<EOF
-
-## Distribution
-
-The container libraries are organized in subdirs of \`/cvmfs/jlab.opensciencegrid.org/geant4/g4install\` with names matching the docker tags above.
-
-The following previous versions of Geant4 are also distributed on CVMFS:
-
- - $(all_supported_geant4_versions)
 
 ## Status Badges:
 

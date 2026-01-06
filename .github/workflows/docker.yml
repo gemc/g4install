@@ -103,6 +103,7 @@ jobs:
           --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
           --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
           --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
+          --geant4-version "${{ matrix.geant4_tag || env.NOVNC_TAG }}"
           > Dockerfile.generated
           cat Dockerfile.generated
 
@@ -166,7 +167,7 @@ jobs:
   # build_arm64 job header
   build_arm64:
     name: Build arm64 from ${{ matrix.image }}:${{ matrix.image_tag }}
-    needs: [overview, discover]
+    needs: [ overview, discover ]
     runs-on: ubuntu-24.04-arm   # <— use native ARM64 runner
     permissions:
       contents: read
@@ -218,6 +219,7 @@ jobs:
           --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
           --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
           --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
+          --geant4-version ${{ matrix.geant4_tag || env.NOVNC_TAG }}"          
           > Dockerfile.generated
           cat Dockerfile.generated
 

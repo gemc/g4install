@@ -125,10 +125,6 @@ def install_geant4(version: str) -> str:
 def install_additional_libraries(image: str, geant4_version: str, root_version: str,
                                  meson_version: str,
                                  novnc_version: str) -> str:
-	# hardcoding clhep, xercesc versions
-	clhep_version = '2.4.7.1'
-	xercesc_version = '3.2.5'
-
 	commands = '\n'
 	if image == "archlinux":
 		commands += install_envmod_on_arch()
@@ -153,7 +149,7 @@ import sys
 def main():
 	parser = argparse.ArgumentParser(
 		description="Return list of packages or install commands for a given base image",
-		epilog="Example: ./packages.py -i fedora",
+		epilog="Example: python3 ./ci/additional_libraries.py -i fedora",
 		add_help=True,
 	)
 

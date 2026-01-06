@@ -3,15 +3,38 @@
 # portable lowercasing (works on old bash, dash, zsh)
 lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 
-get_geant4_tag()       { echo "11.3.2"; }
-get_root_tag()         { echo "v6-36-04"; }
-get_meson_tag()        { echo "1.9.0"; }
-get_novnc_tag()        { echo "v1.6.0"; }
+get_geant4_tags() { echo "11.4.0 11.3.2"; } # space separated list.
+
+# These take the Geant4 tag as input and return a dictionary entry.
+# Return format: JSON-style key/value pair (no surrounding braces).
+get_root_tag() {
+  local g4="${1:?missing geant4 tag}"
+  case "$g4" in
+    11.4.0|11.3.2) echo "v6-36-04" ;;
+    *) echo "ERROR: unsupported Geant4 tag: $g4" >&2; return 2 ;;
+  esac
+}
+
+get_meson_tag() {
+  local g4="${1:?missing geant4 tag}"
+  case "$g4" in
+    11.4.0|11.3.2) echo "1.9.0" ;;
+    *) echo "ERROR: unsupported Geant4 tag: $g4" >&2; return 2 ;;
+  esac
+}
+
+get_novnc_tag() {
+  local g4="${1:?missing geant4 tag}"
+  case "$g4" in
+    11.4.0|11.3.2) echo "v1.6.0" ;;
+    *) echo "ERROR: unsupported Geant4 tag: $g4" >&2; return 2 ;;
+  esac
+}
 
 all_supported_geant4_versions() {
-  # space-separated list
-  echo "-11.4.0-11.3.2";
-  echo "-11.4.0-11.3.2";
+  # markdown list
+  echo "> - 11.4.0";
+  echo "> - 11.3.2";
 }
 
 # Single source of truth (order preserved)
