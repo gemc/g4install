@@ -4,8 +4,8 @@
 . "$(dirname "$(readlink -f "$0")")"/functions.zsh
 what="clhep"
 what_version=$1
-ensure_modules || exit 1
-prepare_version $what $what_version
+ensure_modules || whine_and_quit "ensure_modules failure"
+prepare_version "$what" "$what_version" || whine_and_quit "prepare_version failure"
 
 # clhep specific
 tag="CLHEP_${CLHEP_VERSION//./_}"
@@ -17,10 +17,11 @@ cmake_options="-Wno-dev -DBUILD_STATIC_LIBS=ON -DCMAKE_POSITION_INDEPENDENT_CODE
 
 # logging and installing
 log_general "$what" "$what_version" "$url" "$base_dir"
-clone_tag "$url" $tag "$source_dir"
-cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
+clone_tag "$url" "$tag" "$source_dir" "$what"
+cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options" "$what"
 
 # all done. Testing module
-echo "$magenta > $what installation completed.$reset"
+echo "$magenta > Testing $what installation.$reset"
 module test $what/$what_version
 exit $?
+

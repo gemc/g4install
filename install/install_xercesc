@@ -4,36 +4,26 @@
 . "$(dirname "$(readlink -f "$0")")"/functions.zsh
 what="xercesc"
 what_version=$1
-ensure_modules || exit 1
-prepare_version $what $what_version
+ensure_modules || whine_and_quit "ensure_modules failure"
+prepare_version $what $what_version || whine_and_quit "prepare_version failure"
 
 # xercesc specific
 tag="v$XERCESC_VERSION"
 url="https://github.com/apache/xerces-c.git"
 base_dir="$XERCESCROOT"
-source_dir=$XERCESCROOT/source
-build_dir=$XERCESCROOT/build
+source_dir="$XERCESCROOT/source"
+build_dir="$XERCESCROOT/build"
 cmake_options="-Wno-dev -DBUILD_STATIC_LIBS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON"
 
 # logging and installing
 log_general "$what" "$what_version" "$url" "$base_dir"
-clone_tag "$url" $tag "$source_dir"
-sed -i 's/CXX_STANDARD 14/CXX_STANDARD 17/g' "$source_dir"/CMakeLists.txt
-cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
+clone_tag "$url" "$tag" "$source_dir" "$what"
+cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options" "$what"
 
 # all done. Testing module
 echo "$magenta > $what installation completed.$reset"
 module test $what/$what_version
 exit $?
 
-
-#source "$(dirname "$(readlink -f "$0")")"/functions.zsh
-#log_general "$what" "$what_version" "$grepo" "$base_dir"
-#unpack_source_in_directory_from_url "$grepo" "$source_dir" "$tar_strip"
-#cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options"
-#
-#echo "$magenta > $what installation completed.$reset"
-#module test xercesc/$what_version
-#exit $?
-#
-#
+# on mac this is not needed - need to verify on other oses
+#sed -i 's/CXX_STANDARD 14/CXX_STANDARD 17/g' "$source_dir"/CMakeLists.txt

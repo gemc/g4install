@@ -1,31 +1,47 @@
-#!/bin/zsh -i
-# shell has to be interactive to load modules
+#!/usr/bin/env zsh
 
+# preliminary
 . "$(dirname "$(readlink -f "$0")")"/functions.zsh
 what="geant4"
+what_version=$1
+ensure_modules || whine_and_quit "ensure_modules failure"
+prepare_version $what $what_version || whine_and_quit "prepare_version failure"
+check_qmake_existance
 
-if [[ $# -eq 1 ]]; then
-	local version=$1
-else
-	# error
-	echo " > ERROR: No geant4 version given. Exiting."
-	exit 1
-fi
-
-echo " > Installing geant4 version $geant4_version"
+echo " > Checking / Installing missing dependencies for geant4 version $geant4_version: clhep and xercesc"
 echo
-
-module purge
-module load sim_system
-module load geant4/$geant4_version
-
-if [[ $? -ne 0 ]]; then
-	echo " > ERROR: module load geant4/$geant4_version failed. Exiting."
-	exit 1
-fi
-echo
-
-echo " > Checking / Installing missing dependencies for geant4 version $geant4_version"
 [ "$(moduleTestResult clhep   $CLHEP_VERSION)"   -eq 0 ] && echo " > clhep $CLHEP_VERSION is installed"     || install_clhep $CLHEP_VERSION
 [ "$(moduleTestResult xercesc $XERCESC_VERSION)" -eq 0 ] && echo " > xercesc $XERCESC_VERSION is installed" || install_xercesc $XERCESC_VERSION
-[ "$(moduleTestResult geant4  $G4_VERSION)"      -eq 0 ] && echo " > Done with geant4 source"               || install_geant4_source
+
+# geant4 specific
+tag="v$G4_VERSION"
+url="https://github.com/Geant4/geant4.git"
+base_dir="$G4INSTALL"
+source_dir="$G4INSTALL/source"
+build_dir="$G4INSTALL/build"
+cmake_gdml="  -DGEANT4_USE_GDML=ON -DXERCESC_ROOT_DIR=$XERCESCROOT -DXercesC_INCLUDE_DIR=$XERCESCROOT/include -DXercesC_VERSION=$XERCESC_VERSION"
+cmake_clhep=" -DCLHEP_ROOT_DIR=$CLHEP_BASE_DIR"
+cmake_qt6="   -DQT_QMAKE_EXECUTABLE=$qmake_path  -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON"
+cmake_data="  -DGEANT4_INSTALL_DATA=ON -DGEANT4_INSTALL_PACKAGE_CACHE=ON"
+cmake_pack="  -DBUILD_STATIC_LIBS=ON -DGEANT4_USE_SYSTEM_EXPAT=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DGEANT4_USE_SYSTEM_ZLIB=ON"
+cmake_mt="    -DGEANT4_BUILD_MULTITHREADED=ON  -DGEANT4_BUILD_BUILTIN_BACKTRACE=OFF "
+x11_option=" -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_RAYTRACER_X11=ON "
+cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmake_mt $x11_option"
+#  not used
+# -DCMAKE_CXX_STANDARD=20
+# -DGEANT4_USE_SYSTEM_ZLIB=ON
+# -DBUILD_SHARED_LIBS=OFF
+# -DDGEANT4_USE_USOLIDS=ON, requires vecgeom installed
+# -DGEANT4_INSTALL_PACKAGE_CACHE=OFF
+# -DBUILD_SHARED_LIBS=OFF
+# -DGEANT4_USE_XM=OFF    # on macos
+
+# logging and installing
+log_general "$what" "$what_version" "$url" "$base_dir"
+clone_tag "$url" "$tag" "$source_dir" "$what"
+cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options" "$what"
+
+# all done. Testing module
+echo "$magenta > $what installation completed.$reset"
+module test $what/$what_version
+exit $?
