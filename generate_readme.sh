@@ -5,7 +5,7 @@ set -euo pipefail
 # your existing env pieces
 # ------------------------
 
-source "$(dirname "$0")/env.sh"
+source "ci/env.sh"
 
 # helper to build one image tag suffix from os+ver
 image_suffix_for() {
@@ -100,11 +100,10 @@ generate_readme() {
 ## Geant4 Version: ${g4tag}
 
 This repository provides:
--
-- module environments to install Geant4 and its dependencies
-- geant4 installation scripts
-- docker containers of the top 5 linux distributions with Geant4 installed and ready to use for both \`amd64\` and \`arm64\` architectures.
-- cvmfs distribution of Geant4 installations for both \`amd64\` and \`arm64\` architectures on \`/cvmfs/jlab.opensciencegrid.org/geant4/g4install\`
+
+- module environment for geant4 and installation scripts
+- docker containers with Geant4 for both \`amd64\` and \`arm64\` architectures.
+- cvmfs distribution of Geant4 on \`/cvmfs/jlab.opensciencegrid.org/geant4/g4install\`
 
 ## Built Images
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 
 from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, \
 	remote_novnc_startup_script, remote_novnc_startup_dir
@@ -120,45 +119,63 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
 	return commands
 
 
-# ------------------------------------------------------------------------------
+import argparse
+import sys
+
+
 def main():
 	parser = argparse.ArgumentParser(
-		description="Print a dockerfile with install commands for a given base image, image tag and variouse packages versions",
-		epilog="Example: ./dockerfile_creator.py -i fedora:40 "
+		description="Print a dockerfile with install commands for a given base image, image tag and various package versions",
+		epilog="Example: ./dockerfile_creator.py -i fedora -t 40",
+		add_help=True,
+	)
+
+	# Required *conceptually*, but we want: if missing, show usage (not a long error)
+	parser.add_argument(
+		"-i", "--image",
+		help="Target base os (e.g., fedora, almalinux, ubuntu, debian, archlinux)"
 	)
 	parser.add_argument(
-		"-i", "--image", required=True,
-		help="Target base os (e.g., fedora, almalinux, ubuntu, debian,  archlinux"
+		"-t", "--tag",
+		help="Base image tag (e.g., 40 for fedora, 24.04 for ubuntu, etc.)"
 	)
-	parser.add_argument(
-		"-t", "--tag", required=True,
-		help="Base image tags (e.g., 40 for fedora, 24.04 for ubuntu, etc)"
-	)
+
+	# Defaults used if flags are omitted; if user provides the flag with no value,
+	# argparse will error unless you set nargs/const (not requested here).
 	parser.add_argument(
 		"--root-version", default="v6-36-04",
-		help="Version of ROOT to install (default: v6-36-04)"
+		help="Version of ROOT to install (default: %(default)s)"
 	)
 	parser.add_argument(
 		"--meson-version", default="1.9.0",
-		help="Version of Meson to install (default: 1.9.0)"
+		help="Version of Meson to install (default: %(default)s)"
 	)
 	parser.add_argument(
 		"--novnc-version", default="v1.6.0",
-		help="Version of noVNC to install (default: v1.6.0)"
+		help="Version of noVNC to install (default: %(default)s)"
 	)
 	parser.add_argument(
 		"--geant4-version", default="11.3.2",
-		help="Version of Geant4 to install (default: 11.3.2)"
+		help="Version of Geant4 to install (default: %(default)s)"
 	)
+
 	args = parser.parse_args()
+
+	# 1) If -i/--image or -t/--tag are not given, print usage and exit
+	if not args.image or not args.tag:
+		parser.print_usage(sys.stderr)
+		sys.exit(2)
+
 	is_valid_image(args.image)
 
-	dockerfile = create_dockerfile(args.image,
-	                               args.tag,
-	                               args.geant4_version,
-	                               args.root_version,
-	                               args.meson_version,
-	                               args.novnc_version)
+	dockerfile = create_dockerfile(
+		args.image,
+		args.tag,
+		args.geant4_version,
+		args.root_version,
+		args.meson_version,
+		args.novnc_version,
+	)
 	print(dockerfile)
 
 

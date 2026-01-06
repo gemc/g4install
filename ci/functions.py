@@ -36,7 +36,7 @@ def unique_preserve_order(items):
 
 
 def local_setup_filename():
-	return 'local_g4setup.sh'
+	return 'ci/local_g4setup.sh'
 
 
 def remote_setup_filename():
