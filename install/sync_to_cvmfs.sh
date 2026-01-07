@@ -14,7 +14,7 @@ usage() {
 	local prog="sync_to_cvmfs.sh"
 	cat <<EOF
 Usage:
-  ${prog} [-h] [-K] [-g <geant4_version>] [-r <ghcr_repo>]
+  ${prog} [-h] [-K] [-b <base_image>] [-g <geant4_version>] [-r <ghcr_repo>]
 
 Description:
   Pulls GHCR images with Apptainer (sandbox mode) and rsyncs the directory
@@ -24,39 +24,43 @@ Description:
 Options:
   -h                  Show this help and exit.
   -K                  Keep existing Apptainer cache/tmp dirs (do NOT rm -rf them).
+  -b <base_image>     Only process one base image (default: all).
+                      Allowed: ubuntu | fedora | debian | almalinux | archlinux
   -g <geant4_version> Geant4 version tag (default: ${g4version})
   -r <ghcr_repo>      GHCR repo (default: ${registry_base_address})
 
 Examples:
-  ${prog}
   ${prog} -g ${g4version}
-  ${prog} -K ${g4version}
+  ${prog} -b fedora -g ${g4version}
 EOF
 }
 
 # ---- option parsing ----
-while getopts ":hKg:r:" opt; do
-	case "$opt" in
-		h)
-			usage
-			exit                  0
-			;;
-		K) keep_apptainer_dirs=1 ;;
-		g) g4version="$OPTARG" ;;
-		r) registry_base_address="$OPTARG" ;;
-		\?)
-			print -u2 "ERROR: Unknown option: -$OPTARG"
-			usage >&2
-			exit 2
-			;;
-		:)
-			print -u2 "ERROR: Option -$OPTARG requires an argument."
-			usage >&2
-			exit 2
-			;;
-	esac
+keep_apptainer_dirs=0
+selected_base_image=""
+
+# ---- option parsing ----
+while getopts ":hKb:g:r:" opt; do
+  case "$opt" in
+    h) usage; exit 0 ;;
+    K) keep_apptainer_dirs=1 ;;
+    b) selected_base_image="$OPTARG" ;;
+    g) g4version="$OPTARG" ;;
+    r) registry_base_address="$OPTARG" ;;
+    \?)
+      print -u2 "ERROR: Unknown option: -$OPTARG"
+      usage >&2
+      exit 2
+      ;;
+    :)
+      print -u2 "ERROR: Option -$OPTARG requires an argument."
+      usage >&2
+      exit 2
+      ;;
+  esac
 done
 shift $((OPTIND - 1))
+
 
 if (($# != 0)); then
 	print -u2 "ERROR: Unexpected positional arguments: $*"
@@ -72,6 +76,14 @@ typeset -a BASE_IMAGES=(
 	archlinux
 )
 
+is_valid_base_image()  {
+	local x="$1"
+	for b in $=BASE_IMAGES; do
+		[[ "$b" == "$x" ]] && return 0
+	done
+	return 1
+}
+
 # function that returns the version tag for a given base image
 get_version_tag() {
 	local base_image="$1"
@@ -83,7 +95,7 @@ get_version_tag() {
 		archlinux) echo "latest" ;;
 		*)
 			print "Unknown base image: $base_image" >&2
-			exit                                            1
+			exit                                    1
 			;;
 	esac
 }
@@ -98,7 +110,7 @@ get_gcc_version() {
 		archlinux) echo "15" ;;
 		*)
 			print "Unknown base image: $base_image" >&2
-			exit                                            1
+			exit                                    1
 			;;
 	esac
 }
@@ -108,17 +120,17 @@ get_gcc_version() {
 # fedora:   40    -> fedora40
 # debian:   12    -> debian12
 # almalinux:9.4   -> almalinux9
-# archlinux:latest-> archlinux-latest
+# archlinux:latest-> arch
 distro_prefix() {
 	local base_image="$1"
 	local ver
-	ver="$(      get_version_tag "$base_image")"
+	ver="$(get_version_tag "$base_image")"
 	case "$base_image" in
 		ubuntu) echo "ubuntu${ver%%.*}" ;;
 		fedora) echo "fedora${ver}" ;;
 		debian) echo "debian${ver}" ;;
 		almalinux) echo "almalinux${ver%%.*}" ;;
-		archlinux) echo "archlinux-${ver}" ;;
+		archlinux) echo "arch" ;;
 	esac
 }
 
@@ -139,7 +151,7 @@ typeset -a archs=(amd64 arm64)
 copy_to_cvmfs() {
 	local src_image="$1" # ghcr.io/...:11.3.2-ubuntu-24.04-amd64
 	local osname="$2" # e.g., ubuntu24-gcc13-x86_64
-	local arch="$3"   # amd64 | arm64
+	local arch="$3" # amd64 | arm64
 
 	local dest_dir="$outdir/$osname"
 	mkdir -p "$dest_dir"
@@ -147,7 +159,7 @@ copy_to_cvmfs() {
 	# Create a private temp parent; let 'build' create the actual sandbox dir.
 	local tmp_parent sbox
 	tmp_parent="$(mktemp -d "${APPTAINER_TMPDIR%/}/sbox.XXXXXX")"
-	sbox="${tmp_parent}/rootfs"          # DOES NOT EXIST yet
+	sbox="${tmp_parent}/rootfs"  # DOES NOT EXIST yet
 
 	print "Pulling ${src_image} (arch=${arch}) -> sandbox: $sbox"
 
@@ -172,6 +184,14 @@ copy_to_cvmfs() {
 	rm -rf -- "${tmp_parent}"
 }
 
+if [[ -n "$selected_base_image" ]]; then
+	if ! is_valid_base_image "$selected_base_image"; then
+		print -u2 "ERROR: Invalid base image: $selected_base_image"
+		print -u2 "Allowed: $BASE_IMAGES"
+		exit 2
+	fi
+fi
+
 # caches on /work
 export APPTAINER_CACHEDIR=/work/clas12/ungaro/apptainer-cache
 export APPTAINER_TMPDIR=/work/clas12/ungaro/apptainer-tmp   # optional but helpful
@@ -186,8 +206,21 @@ fi
 
 mkdir -p "$APPTAINER_CACHEDIR" "$APPTAINER_TMPDIR"
 
-for image in $=BASE_IMAGES; do
+typeset -a images_to_process
+if [[ -n "$selected_base_image" ]]; then
+	images_to_process=("$selected_base_image")
+else
+	images_to_process=($BASE_IMAGES)
+fi
+
+echo "Images to Process: ${images_to_process[@]}"
+
+for image in $=images_to_process; do
+	echo
+	echo Processing image $image
 	for arch in $=archs; do
+		echo Processing arch $arch
+		echo
 		this_image="$registry_base_address":"$g4version"-"$image"-"$(get_version_tag "$image")"-"$arch"
 		osname="$(get_osname "$image" "$arch")"
 		# if archilinux, skip arm64 for now
