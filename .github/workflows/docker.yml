@@ -35,7 +35,6 @@ jobs:
             echo 'VNC_PASS=(-e X11VNC_PASSWORD=change-me)'
             echo 'VNC_BIND=(-e VNC_BIND=0.0.0.0)'
             echo 'GEO_FLAGS=(-e GEOMETRY=1920x1200)'
-            echo 'VPLATFORM=" "'
             echo '```'
             echo ""
             echo "If your arch is arm64, (for example, MacOS silicon), and want to use the archlinux image, add this to all command lines:"
@@ -304,12 +303,12 @@ jobs:
             echo "docker pull ${IMAGE}:${TAG}"
             echo '```'
             echo ""
-            echo "### Run (interactive)"
+            echo "### Run in batch mode"
             echo '```bash'
             echo "docker run --rm -it ${IMAGE}:${TAG} bash -li"
             echo '```'
             echo ""
-            echo "### Run with VNC/noVNC"
+            echo "### Run in graphical mode with VNC/noVNC"
             echo "_VNC → localhost:5900 (password: change-me)_"
             echo "_noVNC → http://localhost:6080/vnc.html (password: change-me)_"
             echo '```bash'
