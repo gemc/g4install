@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-valid_images = ["fedora", "ubuntu", "archlinux", "almalinux", "debian"]
 from urllib.parse import urlparse
+
+valid_images = ["fedora", "ubuntu", "archlinux", "almalinux", "debian"]
 
 
 def is_valid_image(image: str) -> bool:
@@ -11,7 +12,6 @@ def is_valid_image(image: str) -> bool:
 		print(f"Error: invalid image '{image}'")
 		print(f"Valid images: {available_images()}")
 		exit(1)
-
 
 def available_images() -> str:
 	return ', '.join(sorted(valid_images))

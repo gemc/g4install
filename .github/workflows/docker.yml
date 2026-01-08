@@ -107,6 +107,8 @@ jobs:
           > Dockerfile.generated
           cat Dockerfile.generated
 
+      # later pass it in the step below so that it's executed for every commit
+      # otherwise the cached step is used
       - name: Get upstream commit
         run: echo "UPSTREAM_REV=$(git ls-remote https://github.com/gemc/g4install HEAD | cut -f1)" >> $GITHUB_ENV
 
@@ -125,44 +127,6 @@ jobs:
           #cache-from: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64
           #cache-to: type=registry,ref=${{ needs.discover.outputs.image }}:cache-amd64,mode=max
 
-      - name: Summary
-        # if: ${{ always() }}
-        if: ${{ false }}
-        shell: bash
-        env:
-          IMAGE: ${{ needs.discover.outputs.image }}
-          TAG: ${{ format('{0}-{1}-{2}', matrix.geant4_tag, matrix.image, matrix.image_tag) }}
-        run: |
-          OUT="$RUNNER_TEMP/summary.md"
-          : "${GITHUB_STEP_SUMMARY:=$RUNNER_TEMP/step_summary.md}"
-          {
-            echo "## \`${IMAGE}:${TAG}\`"
-            echo ""
-            echo "### Pull"
-            echo '```bash'
-            echo "docker pull ${IMAGE}:${TAG}"
-            echo '```'
-            echo ""
-            echo "### Run interactive shell"
-            echo '```bash'
-            echo "docker run --rm -it ${IMAGE}:${TAG} bash -li"
-            echo '```'
-            echo ""
-            echo "### Run with VNC/noVNC"
-            echo "_VNC → localhost:5900 (password: change-me)_"
-            echo "_noVNC → http://localhost:6080/vnc.html (password: change-me)_"
-            echo '```bash'
-            echo "docker run --rm -it \$VPORTS \$VNC_BIND \$VNC_PASS \$GEO_FLAGS ${IMAGE}:${TAG}"
-            echo '```'
-          } | tee -a "$GITHUB_STEP_SUMMARY" > "$OUT"
-
-      - name: Upload summary artifact (amd64)
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: summary-${{ matrix.image }}-${{ matrix.image_tag }}-amd64
-          path: ${{ runner.temp }}/summary.md
-          if-no-files-found: ignore
 
   # build_arm64 job header
   build_arm64:

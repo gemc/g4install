@@ -16,7 +16,7 @@ build_matrix() {
 	local body="" sep="" pair os ver g4
 	for g4 in "${g4_tags[@]}"; do
 
-		local  root meson novnc
+		local root meson novnc
 		root="$(get_root_tag $g4)"
 		meson="$(get_meson_tag $g4)"
 		novnc="$(get_novnc_tag $g4)"

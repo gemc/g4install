@@ -103,7 +103,6 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
                       meson_version: str,
                       novnc_version: str) -> str:
 	commands = ""
-
 	commands += docker_header(image, tag)
 	commands += copy_setup_file(image)
 	commands += install_jlab_ca(image)
@@ -155,7 +154,7 @@ def main():
 		help="Version of noVNC to install (default: %(default)s)"
 	)
 	parser.add_argument(
-		"--geant4-version", default="11.3.2",
+		"--geant4-version", default="11.4.0",
 		help="Version of Geant4 to install (default: %(default)s)"
 	)
 
