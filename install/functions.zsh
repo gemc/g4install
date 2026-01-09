@@ -153,6 +153,9 @@ clone_tag() {
 		git "${args[@]}" -- "$url" "$destination_dir" 2>&1 | sed 's/^/   /'
 		return ${pipestatus[1]}
 	fi
+	# remove .gihtub subdirs
+	find "$destination_dir" -type d -name .gihtub -prune -exec rm -rf {} +
+
 }
 
 meson_install() {
