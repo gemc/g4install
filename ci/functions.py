@@ -35,20 +35,24 @@ def unique_preserve_order(items):
 	return out
 
 
-def local_setup_filename():
-	return 'ci/local_g4setup.sh'
+def remote_startup_dir() -> str:
+	return '/usr/local/bin/'
 
 
-def remote_setup_filename():
-	return '/etc/profile.d/local_g4setup.sh'
+def local_entrypoint():
+	return 'ci/docker-entrypoint.sh'
+
+
+def remote_entrypoint():
+	return f'{remote_startup_dir()}/docker-entrypoint.sh'
+
+
+def local_novnc_startup_script() -> str:
+	return 'ci/novnc/start-novnc.sh'
 
 
 def remote_novnc_startup_script() -> str:
-	return '/usr/local/bin/start-novnc'
-
-
-def remote_novnc_startup_dir() -> str:
-	return '/usr/local/bin/'
+	return f'{remote_startup_dir()}/start-novnc.sh'
 
 
 def jlab_certificate() -> str:

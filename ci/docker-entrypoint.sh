@@ -19,5 +19,6 @@ alias gista='git status -s'
 
 set autolist
 set mark-directories on
-# complete -r
 
+# forwards control to whatever was passed to docker run
+exec "$@"

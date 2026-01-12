@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from functions import map_family, is_valid_image, local_setup_filename, remote_setup_filename, \
-	remote_novnc_startup_script, remote_novnc_startup_dir
+from functions import map_family, is_valid_image, local_entrypoint, remote_entrypoint, \
+	remote_novnc_startup_script, local_novnc_startup_script, remote_startup_dir
 from packages import packages_install_command
 from additional_libraries import install_additional_libraries
 
@@ -25,35 +25,34 @@ cleanup_string_by_family = {
 }
 
 
+def copy_setup_file(image: str) -> str:
+	commands = "\n"
+	commands += "# Create local setup file\n"
+	commands += f"COPY {local_entrypoint()} {remote_entrypoint()} \n"
+	commands += f"COPY {local_novnc_startup_script()} {remote_novnc_startup_script()}\n"
+	commands += f"RUN install -d -m 0755 {remote_startup_dir()}/start-novnc.d\n"
+	family = map_family(image)
+	if family == "fedora":
+		commands += f"COPY ci/novnc/fedora.sh {remote_startup_dir()}/start-novnc.d/fedora.sh\n"
+	elif family == "debian":
+		commands += f"COPY ci/novnc/debian.sh {remote_startup_dir()}/start-novnc.d/debian.sh\n"
+	elif family == "archlinux":
+		commands += f"COPY ci/novnc/arch.sh {remote_startup_dir()}/start-novnc.d/arch.sh\n"
+
+	return commands
+
+
 def docker_header(image: str, tag: str) -> str:
 	commands = f"FROM {image}:{tag}\n"
 	commands += f"LABEL maintainer=\"Maurizio Ungaro <ungaro@jlab.org>\"\n\n"
 	commands += f"# run bash instead of sh\n"
 	commands += f"SHELL [\"/bin/bash\", \"-c\"]\n\n"
-	commands += f"# Make browser UI the default; users can override with \"docker run ... bash -l\"\n"
+	commands += f"# Make browser UI the default; users can override with \"docker run ... bash -il\"\n"
+	commands += f"# - Entrypoint is always executed\"\n"
+	commands += f"# - CMD provides the default arguments\"\n"
+	commands += f"ENTRYPOINT [\"{remote_entrypoint()}\"]\n\n"
 	commands += f"CMD [\"{remote_novnc_startup_script()}\"]\n\n"
 	commands += f"ENV AUTOBUILD=1\n"
-	return commands
-
-
-def copy_setup_file(image: str) -> str:
-	local_setup_file = local_setup_filename()
-	remote_setup_file = remote_setup_filename()
-
-	commands = "\n"
-	commands += "# Create local setup file\n"
-	commands += f"COPY {local_setup_file} {remote_setup_file} \n"
-	commands += f"COPY ci/novnc/start-novnc.sh {remote_novnc_startup_script()}\n"
-	commands += f"RUN install -d -m 0755 /usr/local/bin/start-novnc.d\n"
-
-	family = map_family(image)
-	if family == "fedora":
-		commands += f"COPY ci/novnc/fedora.sh {remote_novnc_startup_dir()}/start-novnc.d/fedora.sh\n"
-	elif family == "debian":
-		commands += f"COPY ci/novnc/debian.sh {remote_novnc_startup_dir()}/start-novnc.d/debian.sh\n"
-	elif family == "archlinux":
-		commands += f"COPY ci/novnc/arch.sh {remote_novnc_startup_dir()}/start-novnc.d/arch.sh\n"
-
 	return commands
 
 
