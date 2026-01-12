@@ -118,6 +118,7 @@ def install_xercesc(version: str) -> str:
 def install_geant4(version: str) -> str:
 	commands = f"\n# Install Geant4 {version}\n"
 	commands += f'RUN source {remote_entrypoint()} \\\n'
+	commands += f'    && cat {remote_entrypoint()}\n'
 	commands += f'    && install_geant4 {version}\n'
 	return commands
 

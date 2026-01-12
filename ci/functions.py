@@ -36,7 +36,7 @@ def unique_preserve_order(items):
 
 
 def remote_startup_dir() -> str:
-	return '/usr/local/bin/'
+	return '/usr/local/bin'
 
 
 def local_entrypoint():
