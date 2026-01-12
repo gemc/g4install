@@ -39,6 +39,9 @@ def copy_setup_file(image: str) -> str:
 	elif family == "archlinux":
 		commands += f"COPY ci/novnc/arch.sh {remote_startup_dir()}/start-novnc.d/arch.sh\n"
 
+	# forwards control to whatever was passed to docker run
+	commands += f'    && printf \'exec "$@"\\n\' >> {remote_entrypoint()}\n'
+
 	return commands
 
 

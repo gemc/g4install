@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from functions import remote_setup_filename, curl_command, map_family, is_valid_image, sim_home
+from functions import remote_entrypoint, curl_command, map_family, is_valid_image, sim_home
 
 
 def install_root_from_source(image: str, root_version: str) -> str:
@@ -24,7 +24,7 @@ def install_root_from_source(image: str, root_version: str) -> str:
 	commands += f'    && mkdir root_build root && cd root_build \\\n'
 	commands += f'    && cmake {root_skip} -Dminimal=ON -DCMAKE_INSTALL_PREFIX=../root ../root_src \\\n'
 	commands += f'    && cmake --build . -- install  -j"$(nproc)" \\\n'
-	commands += f'    && echo "cd {root_install_dir}/root/bin ; source thisroot.sh ; cd -" >> {remote_setup_filename()}\n'
+	commands += f'    && echo "cd {root_install_dir}/root/bin ; source thisroot.sh ; cd -" >> {remote_entrypoint()}\n'
 	return commands
 
 
@@ -96,28 +96,28 @@ def install_g4install(is_cvfms: bool, geant4_version: str) -> str:
 	commands += f'RUN mkdir -p {g4install} \\\n'
 	commands += f'    && cd {g4install} \\\n'
 	commands += f'    && git clone --depth=1 https://github.com/gemc/g4install . \\\n'
-	commands += f'    && echo "module use {g4install}/modules" >> {remote_setup_filename()} \\\n'
-	commands += f'    && echo "module load geant4/{geant4_version}" >> {remote_setup_filename()}\n'
+	commands += f'    && echo "module use {g4install}/modules" >> {remote_entrypoint()} \\\n'
+	commands += f'    && echo "module load geant4/{geant4_version}" >> {remote_entrypoint()}\n'
 	return commands
 
 
 def install_clhep(version: str) -> str:
 	commands = f"\n# Install CLHEP {version}\n"
-	commands += f'RUN source {remote_setup_filename()} \\\n'
+	commands += f'RUN source {remote_entrypoint()} \\\n'
 	commands += f'    && install_clhep {version}\n'
 	return commands
 
 
 def install_xercesc(version: str) -> str:
 	commands = f"\n# Install XERCESC {version}\n"
-	commands += f'RUN source {remote_setup_filename()} \\\n'
+	commands += f'RUN source {remote_entrypoint()} \\\n'
 	commands += f'    && install_xercesc {version}\n'
 	return commands
 
 
 def install_geant4(version: str) -> str:
 	commands = f"\n# Install Geant4 {version}\n"
-	commands += f'RUN source {remote_setup_filename()} \\\n'
+	commands += f'RUN source {remote_entrypoint()} \\\n'
 	commands += f'    && install_geant4 {version}\n'
 	return commands
 
