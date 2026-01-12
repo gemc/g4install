@@ -117,7 +117,9 @@ def install_xercesc(version: str) -> str:
 
 def install_geant4(version: str) -> str:
 	commands = f"\n# Install Geant4 {version}\n"
-	commands += f'RUN cat {remote_entrypoint()} \\\n'
+	# forwards control to whatever was passed to docker run
+	commands += f'RUN printf \'\n exec "$@"\\n\' >> {remote_entrypoint()} \\\n'
+	commands += f'    && cat {remote_entrypoint()} \\\n'
 	commands += f'    && source {remote_entrypoint()} \\\n'
 	commands += f'    && install_geant4 {version}\n'
 	return commands

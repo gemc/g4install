@@ -30,9 +30,7 @@ def copy_setup_file(image: str) -> str:
 	commands += "# Create local setup file\n"
 	commands += f"COPY {local_entrypoint()} {remote_entrypoint()} \n"
 	commands += f"COPY {local_novnc_startup_script()} {remote_novnc_startup_script()}\n"
-	commands += f'RUN install -d -m 0755 {remote_startup_dir()}/start-novnc.d \\\n'
-	# forwards control to whatever was passed to docker run
-	commands += f'    && printf \'exec "$@"\\n\' >> {remote_entrypoint()}\n'
+	commands += f'RUN install -d -m 0755 {remote_startup_dir()}/start-novnc.d \n'
 
 	family = map_family(image)
 	if family == "fedora":
