@@ -4,40 +4,41 @@ from functions import remote_entrypoint, curl_command, map_family, is_valid_imag
 
 
 def install_root_from_source(image: str, root_version: str) -> str:
-	# on fedora lines, we would install from dnf
+	# On fedora/arch we install ROOT via the native package manager elsewhere
 	family = map_family(image)
-	if family == "fedora" or family == "archlinux":
+	if family in ("fedora", "archlinux"):
 		return ""
 
-	root_install_dir = '/usr/local'
-	root_github = 'https://github.com/root-project/root.git'
-	features_to_skip = ['arrow', 'davix', 'cefweb', 'cocoa', 'cuda', 'fortran', 'pythia8', 'r',
-	                    'shadowpw', 'tmva', 'vecgeom', 'xrootd']
-	root_skip = ''
-	for feature in features_to_skip:
-		root_skip += f' -D{feature}=OFF'
+	root_install_dir = "/usr/local"
+	root_github = "https://github.com/root-project/root.git"
 
-	commands = '\n\n'
-	commands += '# root installation from source tarball\n'
-	commands += f'RUN cd {root_install_dir} \\\n'
-	commands += f'    && git clone -c advice.detachedHead=false --single-branch --depth=1 -b {root_version} {root_github} root_src  \\\n'
-	commands += f'    && mkdir root_build root && cd root_build \\\n'
-	commands += f'    && cmake {root_skip} -Dminimal=ON -DCMAKE_INSTALL_PREFIX=../root ../root_src 2>cmake_err.txt 1>cmake_log.txt \\\n'
-	commands += f'    && if [ $? -ne 0 ]; then \\\n'
-	commands += f'    &&    cat cmake_err.txt \\\n'
-	commands += f'    &&    cat cmake_log.txt \\\n'
-	commands += f'    && else \\\n'
-	commands += f'    &&    echo ROOT CMAKE successful \\\n'
-	commands += f'    && fi \\\n'
-	commands += f'    && cmake --build . -- install  -j"$(nproc)" 2>build_err.txt 1>build_log.txt \\\n'
-	commands += f'    && if [ $? -ne 0 ]; then \\\n'
-	commands += f'    &&    cat build_err.txt \\\n'
-	commands += f'    &&    cat build_log.txt \\\n'
-	commands += f'    && else \\\n'
-	commands += f'    &&    echo ROOT build successful \\\n'
-	commands += f'    && fi \\\n'
-	commands += f'    && echo "cd {root_install_dir}/root/bin ; source thisroot.sh ; cd -" >> {remote_entrypoint()}\n'
+	features_to_skip = [
+		"arrow", "davix", "cefweb", "cocoa", "cuda", "fortran", "pythia8", "r",
+		"shadowpw", "tmva", "vecgeom", "xrootd",
+	]
+	root_skip = "".join(f" -D{feature}=OFF" for feature in features_to_skip)
+
+	ep = remote_entrypoint()
+
+	commands = "\n\n"
+	commands += "# ROOT installation from source\n"
+	commands += (
+		f"RUN cd {root_install_dir} \\\n"
+		f" && git clone -c advice.detachedHead=false --single-branch --depth=1 -b {root_version} {root_github} root_src \\\n"
+		" && mkdir -p root_build root \\\n"
+		" && cd root_build \\\n"
+		f" && ( cmake{root_skip} -Dminimal=ON -DCMAKE_INSTALL_PREFIX=../root ../root_src >cmake_log.txt 2>cmake_err.txt \\\n"
+		"      || { rc=$?; cat cmake_err.txt cmake_log.txt; exit $rc; } ) \\\n"
+		" && ( cmake --build . --target install -j\"$(nproc)\" >build_log.txt 2>build_err.txt \\\n"
+		"      || { rc=$?; cat build_err.txt build_log.txt; exit $rc; } ) \\\n"
+		f" && rm -rf {root_install_dir}/root_src {root_install_dir}/root_build \\\n"
+	f" && echo \"cd {root_install_dir}/root/bin ; source thisroot.sh ; cd -\" >> {ep}\n"
+	)
+
 	return commands
+
+
+
 
 
 def install_meson(meson_version: str) -> str:
