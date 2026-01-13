@@ -123,27 +123,42 @@ def packages_to_be_installed(image: str) -> str:
 def packages_install_command(image: str) -> str:
 	family = map_family(image)
 	packages = packages_to_be_installed(image)
-	command = ""
 
-	if family == "fedora":
-		command += f"RUN dnf install -y --allowerasing {packages}"
+	# Single place for the log file; put it somewhere writable during build.
+	log = "/tmp/packages-install.log"
 
-	elif family == "debian":
-		command += "ENV DEBIAN_FRONTEND=noninteractive\n"
-		command += "ENV DEBCONF_NONINTERACTIVE_SEEN=true\n"
-		command += "ENV TZ=UTC\n"
-
-		command += (
-				"RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime \\\n"
-				" && apt-get update \\\n"
-				"    && apt-get install -y --no-install-recommends tzdata "
-				+ packages
+	def wrap_with_log(inner_cmd: str) -> str:
+		# Run inner_cmd, capture stdout+stderr to log.
+		# If it fails, print the log and exit with the same failure code.
+		return (
+			"RUN /bin/bash -lc 'set -euo pipefail; "
+			f"{inner_cmd} >{log} 2>&1 || {{ rc=$?; cat {log}; exit $rc; }}'"
 		)
 
-	elif family == "archlinux":
-		command += f"RUN pacman -Syu --noconfirm --needed {packages}"
+	if family == "fedora":
+		inner = f"dnf install -y --allowerasing {packages}"
+		return wrap_with_log(inner) + "\n"
 
-	return command
+	elif family == "debian":
+		# Keep your noninteractive envs, then wrap the apt sequence.
+		prefix = (
+			"ENV DEBIAN_FRONTEND=noninteractive\n"
+			"ENV DEBCONF_NONINTERACTIVE_SEEN=true\n"
+			"ENV TZ=UTC\n"
+		)
+		inner = (
+			"ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && "
+			"apt-get update && "
+			f"apt-get install -y --no-install-recommends tzdata {packages}"
+		)
+		return prefix + wrap_with_log(inner) + "\n"
+
+	elif family == "archlinux":
+		inner = f"pacman -Syu --noconfirm --needed {packages}"
+		return wrap_with_log(inner) + "\n"
+
+	return ""
+
 
 
 def main():

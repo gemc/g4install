@@ -197,11 +197,11 @@ cmake_build_and_install() {
 
 	cmake -DCMAKE_INSTALL_PREFIX="$install_dir" $=cmake_options "$source_dir" 2>"$install_dir/cmake_err.txt" 1>"$install_dir/cmake_log.txt" || whine_and_quit "  >>> failed: cmake -DCMAKE_INSTALL_PREFIX=$install_dir $=cmake_options $source_dir"
 	if [ $? -ne 0 ]; then
-		echo "cmake failed. Error Log: "
+		echo "CMAKE Error Log: "
 		cat $install_dir/cmake_err.txt
-		echo "cmake failed. Build Log: "
+		echo "CMAKE Std Log: "
 		cat $install_dir/cmake_log.txt
-		whine_and_quit "$red $this_package cmake failure"$reset
+		whine_and_quit "$red $this_package CMAKE Failure"$reset
 	else
 		echo "$green > $this_package cmake successful"$reset
 	fi
@@ -211,8 +211,11 @@ cmake_build_and_install() {
 	echo " > make std err: $install_dir/build_err.txt"
 	make -j "$n_cpu" 2>$install_dir/build_err.txt 1>"$install_dir/build_log.txt" || whine_and_quit "make -j $n_cpu"
 	if [ $? -ne 0 ]; then
+		echo "Build Error Log: "
+		cat $install_dir/build_err.txt
+		echo "Build Std Log: "
 		cat $install_dir/build_log.txt
-		whine_and_quit "$red Make Failure"$reset
+		whine_and_quit "$red Build Failure"$reset
 	else
 		echo "$green > $this_package build successful"$reset
 	fi

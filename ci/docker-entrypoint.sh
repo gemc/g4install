@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 if ! typeset -f module >/dev/null 2>&1 && ! command -v module >/dev/null 2>&1; then
   for f in \

@@ -125,7 +125,7 @@ jobs:
         with:
           pull: true
           # remove no-cache if you want caching
-          # no-cache: true
+          no-cache: true
           build-args: |
             UPSTREAM_REV=${{ env.UPSTREAM_REV }}
           context: .
