@@ -137,7 +137,7 @@ def packages_install_command(image: str) -> str:
 
 	if family == "fedora":
 		inner = f"dnf install -y --allowerasing {packages}"
-		return wrap_with_log(inner) + "\n"
+		return wrap_with_log(inner)
 
 	elif family == "debian":
 		# Keep your noninteractive envs, then wrap the apt sequence.
@@ -151,11 +151,11 @@ def packages_install_command(image: str) -> str:
 			"apt-get update && "
 			f"apt-get install -y --no-install-recommends tzdata {packages}"
 		)
-		return prefix + wrap_with_log(inner) + "\n"
+		return prefix + wrap_with_log(inner)
 
 	elif family == "archlinux":
 		inner = f"pacman -Syu --noconfirm --needed {packages}"
-		return wrap_with_log(inner) + "\n"
+		return wrap_with_log(inner)
 
 	return ""
 
