@@ -27,9 +27,12 @@ cleanup_string_by_family = {
 
 def copy_setup_file(image: str) -> str:
 	commands = "\n"
-	commands += "# Create local setup file\n"
+	commands += "# Create and set permissions to remote startup files\n"
 	commands += f"COPY {local_entrypoint()} {remote_entrypoint()} \n"
 	commands += f"COPY {local_novnc_startup_script()} {remote_novnc_startup_script()}\n"
+	commands += f'RUN chmod 0755 {remote_entrypoint()} \n'
+	commands += f'RUN chmod 0755 {remote_novnc_startup_script()} \n'
+	commands += "\n# Create start-novnc.d directory and install functions\n"
 	commands += f'RUN install -d -m 0755 {remote_startup_dir()}/start-novnc.d \n'
 
 	family = map_family(image)
