@@ -17,5 +17,8 @@ alias ll='ls -lah'
 alias gist='git status -s | grep -v \?'
 alias gista='git status -s'
 
-set autolist
-set mark-directories on
+# Only for interactive shells (readline)
+if [[ $- == *i* ]]; then
+  bind 'set show-all-if-ambiguous on'   # typical "autolist-like" behavior
+  bind 'set mark-directories on'
+fi
