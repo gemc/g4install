@@ -46,6 +46,9 @@ def local_entrypoint():
 def remote_entrypoint():
 	return f'{remote_startup_dir()}/docker-entrypoint.sh'
 
+def remote_entrypoint_addon():
+	return f'{remote_startup_dir()}/additional-entrycommands.sh'
+
 
 def local_novnc_startup_script() -> str:
 	return 'ci/novnc/start-novnc.sh'

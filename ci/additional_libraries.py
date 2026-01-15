@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from functions import remote_entrypoint, curl_command, map_family, is_valid_image, sim_home
+from functions import remote_entrypoint, remote_entrypoint_addon, curl_command, map_family, is_valid_image, sim_home
 
 
 def install_root_from_source(image: str, root_version: str) -> str:
@@ -18,7 +18,7 @@ def install_root_from_source(image: str, root_version: str) -> str:
 	]
 	root_skip = "".join(f" -D{feature}=OFF" for feature in features_to_skip)
 
-	ep = remote_entrypoint()
+	ep = remote_entrypoint_addon()
 
 	commands = "\n\n"
 	commands += "# ROOT installation from source\n"
@@ -109,8 +109,8 @@ def install_g4install(is_cvfms: bool, geant4_version: str) -> str:
 	commands += f'RUN mkdir -p {g4install} \\\n'
 	commands += f'    && cd {g4install} \\\n'
 	commands += f'    && git clone --depth=1 https://github.com/gemc/g4install . \\\n'
-	commands += f'    && echo "module use {g4install}/modules" >> {remote_entrypoint()} \\\n'
-	commands += f'    && echo "module load geant4/{geant4_version}" >> {remote_entrypoint()}\n'
+	commands += f'    && echo "module use {g4install}/modules" >> {remote_entrypoint_addon()} \\\n'
+	commands += f'    && echo "module load geant4/{geant4_version}" >> {remote_entrypoint_addon()}\n'
 	return commands
 
 
@@ -130,13 +130,7 @@ def install_xercesc(version: str) -> str:
 
 def install_geant4(version: str) -> str:
 	commands = f"\n# Install Geant4 {version}\n"
-	commands += f"RUN printf '%s\\n' \\\n"
-	commands += f"  '' \\\n"
-	commands += f"  'if [ \"${{DOCKER_ENTRYPOINT_SOURCE_ONLY:-}}\" != \"1\" ]; then' \\\n"
-	commands += f"  '  exec \"$@\"' \\\n"
-	commands += f"  'fi' \\\n"
-	commands += f"  >> {remote_entrypoint()} \\\n"
-	commands += f" && cat {remote_entrypoint()} \\\n"
+	commands += f"RUN cat {remote_entrypoint()} \\\n"
 	commands += f" && DOCKER_ENTRYPOINT_SOURCE_ONLY=1 . {remote_entrypoint()} \\\n"
 	commands += f" && install_geant4 {version}\n"
 	return commands
