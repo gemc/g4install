@@ -13,6 +13,7 @@ def is_valid_image(image: str) -> bool:
 		print(f"Valid images: {available_images()}")
 		exit(1)
 
+
 def available_images() -> str:
 	return ', '.join(sorted(valid_images))
 
@@ -45,6 +46,11 @@ def local_entrypoint():
 
 def remote_entrypoint():
 	return f'{remote_startup_dir()}/docker-entrypoint.sh'
+
+
+def local_entrypoint_addon():
+	return 'ci/additional-entrycommands.sh'
+
 
 def remote_entrypoint_addon():
 	return f'{remote_startup_dir()}/additional-entrycommands.sh'
