@@ -51,7 +51,6 @@ def remote_entrypoint():
 def local_entrypoint_addon():
 	return 'ci/additional-entrycommands.sh'
 
-
 def remote_entrypoint_addon():
 	return f'{remote_startup_dir()}/additional-entrycommands.sh'
 
