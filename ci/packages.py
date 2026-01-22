@@ -15,6 +15,11 @@ pkg_sections = {
 		"debian":    ["libexpat1-dev"],
 		"archlinux": ["expat"],
 	},
+	"zlib": {
+		"fedora":    ["zlib zlib-devel"],
+		"debian":    ["zlib1g zlib1g-dev"],
+		"archlinux": ["zlib"],
+	},
 	"sql":            {
 		"fedora":    ["mariadb-devel", "sqlite-devel"],
 		"debian":    ["libmysqlclient-dev", "libsqlite3-dev"],
