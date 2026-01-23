@@ -25,6 +25,7 @@ jobs:
   overview:
     if: ${{ github.event_name != 'pull_request' }}
     name: Workflow Overview
+    needs: [ discover ]
     runs-on: ubuntu-latest
     steps:
       - name: Write overview
@@ -35,6 +36,31 @@ jobs:
             echo "# Geant4 Images — Overview"
             echo "Repository: [g4install images](https://github.com/gemc/g4install/pkgs/container/g4install)"
             echo "Except for archlinux (amd64-only), all images are built for both the *amd64* and *arm64* architectures."
+            echo ""
+            echo "## Component versions"
+            echo ""
+            echo "| Geant4 | ROOT | Meson | noVNC |"
+            echo "|---|---|---|---|"
+
+            MATRIX='${{ needs.discover.outputs.matrix_build }}'
+            echo "$MATRIX" | jq -r \
+              --arg ROOT   "${ROOT_TAG}" \
+              --arg MESON  "${MESON_TAG}" \
+              --arg NOVNC  "${NOVNC_TAG}" \
+              --arg GEANT4 "${GEANT4_TAG}" \
+              '
+              (if type=="object" and has("include") then .include else . end)
+              | map({
+                  geant4: (.geant4_tag // $GEANT4),
+                  root:   (.root_tag   // $ROOT),
+                  meson:  (.meson_tag  // $MESON),
+                  novnc:  (.novnc_tag  // $NOVNC)
+                })
+              | unique
+              | sort_by(.geant4,.root,.meson,.novnc)
+              | .[]
+              | "| \(.geant4) | \(.root) | \(.meson) | \(.novnc) |"
+              '
             echo ""
             echo ""
             echo "Set these convenience variables for the interactive use below (choose your own password)"
