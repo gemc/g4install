@@ -36,6 +36,22 @@ def unique_preserve_order(items):
 	return out
 
 
+def local_bashrc() -> str:
+	return "ci/shell/bashrc.gemc"
+
+
+def local_inputrc() -> str:
+	return "ci/shell/inputrc.gemc"
+
+
+def remote_bashrc() -> str:
+	return "/usr/local/share/gemc/bashrc.gemc"
+
+
+def remote_inputrc() -> str:
+	return "/usr/local/share/gemc/inputrc.gemc"
+
+
 def remote_startup_dir() -> str:
 	return '/usr/local/bin'
 
@@ -50,6 +66,7 @@ def remote_entrypoint():
 
 def local_entrypoint_addon():
 	return 'ci/additional-entrycommands.sh'
+
 
 def remote_entrypoint_addon():
 	return f'{remote_startup_dir()}/additional-entrycommands.sh'

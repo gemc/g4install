@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-
 from functions import map_family, is_valid_image, \
 	local_entrypoint, remote_entrypoint, \
 	local_entrypoint_addon, remote_entrypoint_addon, \
-	remote_novnc_startup_script, local_novnc_startup_script, remote_startup_dir
+	remote_novnc_startup_script, local_novnc_startup_script, remote_startup_dir, \
+	local_bashrc, remote_bashrc, local_inputrc, remote_inputrc
 from packages import packages_install_command
 from additional_libraries import install_additional_libraries
 
@@ -30,6 +30,8 @@ cleanup_string_by_family = {
 def copy_setup_file(image: str) -> str:
 	commands = "\n"
 	commands += "# Copy remote startup files\n"
+	commands += f"COPY {local_bashrc()} {remote_bashrc()} \n"
+	commands += f"COPY {local_inputrc()} {remote_inputrc()} \n"
 	commands += f"COPY {local_entrypoint()} {remote_entrypoint()} \n"
 	commands += f"COPY {local_entrypoint_addon()} {remote_entrypoint_addon()}\n"
 	commands += f"COPY {local_novnc_startup_script()} {remote_novnc_startup_script()}\n"
@@ -42,8 +44,26 @@ def copy_setup_file(image: str) -> str:
 	elif family == "debian":
 		commands += f"COPY ci/novnc/debian.sh {remote_startup_dir()}/start-novnc.d/debian.sh\n"
 	elif family == "archlinux":
-		commands += f"COPY ci/novnc/arch.sh {remote_startup_dir()}/start-novnc.d/arch.sh\n"
+		commands += f"COPY ci/novnc/arch.sh {remote_startup_dir()}/start-novnc.d/arch.sh\n\n"
 
+	commands += "\n# append to system inputrc and bashrc files\n"
+	commands += "RUN /bin/bash -lc 'set -euo pipefail; \\\n"
+	commands += f"  br={remote_bashrc()}; \\\n"
+	commands += f"  in={remote_inputrc()}; \\\n"
+	commands += "  if [[ -f /etc/inputrc ]]; then \\\n"
+	commands += "    while IFS= read -r line; do \\\n"
+	commands += "      [[ -z \"$line\" ]] && continue; \\\n"
+	commands += "      [[ \"$line\" =~ ^[[:space:]]*# ]] && continue; \\\n"
+	commands += "      grep -qxF \"$line\" /etc/inputrc || echo \"$line\" >> /etc/inputrc; \\\n"
+	commands += "    done < \"$in\"; \\\n"
+	commands += "  fi; \\\n"
+	commands += "  for f in /etc/bash.bashrc /etc/bashrc; do \\\n"
+	commands += "    [[ -f \"$f\" ]] || continue; \\\n"
+	commands += "    grep -q \"GEMC interactive helpers (container)\" \"$f\" || { \\\n"
+	commands += "      echo >> \"$f\"; \\\n"
+	commands += "      cat \"$br\" >> \"$f\"; \\\n"
+	commands += "    }; \\\n"
+	commands += "  done'\n"
 
 	return commands
 

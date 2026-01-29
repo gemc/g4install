@@ -54,7 +54,7 @@ get_root_tag() {
 get_meson_tag() {
 	local g4="${1:?missing geant4 tag}"
 	if is_supported_g4_version "$g4"; then
-		echo "1.9.0"
+		echo "1.10.1"
 	else
 		echo "ERROR: unsupported Geant4 tag: $g4" >&2
 		return 2

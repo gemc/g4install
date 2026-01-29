@@ -1,0 +1,3 @@
+# readline defaults (container)
+set show-all-if-ambiguous on
+set mark-directories on
