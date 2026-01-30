@@ -230,7 +230,7 @@ jobs:
             echo ""
             echo "Includes:"
             if docker buildx imagetools inspect "${IMAGE}:${TAG}-amd64" >/dev/null 2>&1; then echo "- amd64"; fi
-            if docker buildx imagetools inspect "${IMAGE}:${TAG}-arm64" >/dev/null 2>&1; then echo "- arm64"; else echo "- no arm64. Run with --platform=linux/amd64 in arm64 CPUs"; fi
+            if docker buildx imagetools inspect "${IMAGE}:${TAG}-arm64" >/dev/null 2>&1; then echo "- arm64"; else echo "- no arm64. Run with --platform=linux/amd64 in arm64 CPUs.  On MacOs you may need to use Rosetta for correct terminal emulation."; fi
             echo ""
             echo "### Pull"
             echo '```bash'
