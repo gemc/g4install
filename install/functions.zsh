@@ -136,9 +136,9 @@ clone_tag() {
 	print -r -- " > tag: «$tag»"
 	echo " > in directory: $destination_dir"
 
-	# Build clone args safely
+	# Clone one branch or tag, w/o history, with submodules w/o their history (shallow)
 	local -a args
-	args=(clone -c advice.detachedHead=false --recurse-submodules --single-branch)
+	args=(clone -c advice.detachedHead=false --recurse-submodules --shallow-submodules --depth 1)
 
 	if [[ "$tag" == "dev" ]]; then
 		# "dev" means: shallow clone of the default branch (no release tag)
