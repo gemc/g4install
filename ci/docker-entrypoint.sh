@@ -68,7 +68,7 @@ ensure_modules() {
   note_if_module_is_function
 }
 
-ensure_module
+ensure_modules
 
 export TERM=xterm-256color
 source additional-entrycommands.sh
