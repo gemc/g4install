@@ -2,8 +2,8 @@
 
 ensure_modules() {
 	die() {
-		printf       '%s\n' "ERROR: $*" >&2
-		exit                                      1
+		printf     '%s\n' "ERROR: $*" >&2
+		exit                                    1
 	}
 
 	# Detect shell (only special-case bash/zsh)
@@ -13,19 +13,19 @@ ensure_modules() {
 
 	module_is_available() {
 		if [ "$shell" = "bash" ]; then
-			command  -v module >/dev/null 2>&1 || declare -F module >/dev/null 2>&1
+			command -v module >/dev/null 2>&1 || declare -F module >/dev/null 2>&1
 		elif [ "$shell" = "zsh" ]; then
-			command  -v module >/dev/null 2>&1 || whence -w module >/dev/null 2>&1
+			command -v module >/dev/null 2>&1 || whence -w module >/dev/null 2>&1
 		else
-			command  -v module >/dev/null 2>&1
+			command -v module >/dev/null 2>&1
 		fi
 	}
 
 	note_if_module_is_function() {
 		if [ "$shell" = "bash" ]; then
-			declare  -F module >/dev/null 2>&1 && printf '%s\n' "module exists as a function"
+			declare -F module >/dev/null 2>&1 && printf '%s\n' "module exists as a function"
 		elif [ "$shell" = "zsh" ]; then
-			whence  -w module 2>/dev/null | grep -q 'function' && printf '%s\n' "module exists as a function"
+			whence -w module 2>/dev/null | grep -q 'function' && printf '%s\n' "module exists as a function"
 		fi
 	}
 
@@ -48,6 +48,12 @@ ensure_modules() {
 	fi
 
 	candidates=(
+	
+		# Arch/AUR env-modules
+		"/etc/modules/init/$shell"
+		"/etc/modules/init/sh"
+
+		# Traditional locations (varies by distro)
 		"/usr/share/Modules/init/$shell"
 		"/usr/share/Modules/init/sh"
 		"/usr/share/modules/init/$shell"
@@ -57,7 +63,7 @@ ensure_modules() {
 	)
 
 	for f in "${candidates[@]}"; do
-		printf 'Testing <%q> exists=%s readable=%s\n' "$f" "$(test -e "$f"; echo $?)" "$(test -r "$f"; echo $?)"
+		printf 'Testing <%q>\n' "$f"
 		if [[ -r "$f" ]]; then
 			. "$f" || die "failed to source $f"
 			found="$f"
