@@ -55,10 +55,12 @@ ensure_modules() {
 
   found=""
   for f in $candidates; do
+  	echo " Testing $f exists"
     if [ -r "$f" ]; then
       # shellcheck disable=SC1090
       . "$f" || die "failed to source $f"
       found="$f"
+      echo "> found init module file: $f"
       break
     fi
   done
