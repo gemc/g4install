@@ -1,4 +1,4 @@
-
+# g4install
 
 Environment modules, installation scripts, container images, and CVMFS distribution for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
 
@@ -7,6 +7,8 @@ This repository provides:
 - **Environment Modules** + **installation scripts** for [Geant4](https://github.com/Geant4/geant4.git)
 - **Multi-architecture Docker images** (`amd64`, `arm64`)
 - **CVMFS distribution** of Geant4 builds
+
+<br/>
 
 ## Why use g4install?
 
@@ -19,7 +21,7 @@ This repository provides:
 
 This is especially useful when validating applications against different Geant4 releases (e.g. `11.3.x` vs `11.4.x`).
 
----
+<br/>
 
 ## Quick Start (Local Installation)
 
@@ -68,7 +70,7 @@ geant4-config --version
 which geant4-config
 ```
 
----
+<br/>
 
 ## Seamless Multi-Version Switching
 
@@ -82,7 +84,12 @@ module switch geant4/11.3.2 geant4/11.4.0
 # build/test project B
 ```
 
+
+<br/>
+
 ---
+
+<br/>
 
 ## Docker Images
 
@@ -137,7 +144,11 @@ docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4instal
 | debian 12        | `docker pull ghcr.io/gemc/g4install:11.3.2-debian-12`        |  yes  |  yes  |
 | archlinux latest | `docker pull ghcr.io/gemc/g4install:11.3.2-archlinux-latest` |   no  |  yes  |
 
+<br/>
+
 ---
+
+<br/>
 
 
 ## CVMFS Distribution
@@ -153,7 +164,11 @@ Geant4 libraries are distributed via CVMFS at:
 
 * **Multi-version workflow / switching guide**: `multi-version-workflow.md`
 
+<br/>
+
 ---
+
+<br/>
 
 ## CI Status
 
