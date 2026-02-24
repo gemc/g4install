@@ -114,14 +114,12 @@ prepare_version() {
 log_general() {
 	this_package=$1
 	version=$2
-	filename=$3
-	base_dir=$4
+	base_dir=$3
 	echo
 	echo $yellow"> ${funcstack[1]}() for «$this_package»:"$reset
 	print -r -- " > Version: «$version»"
-	print -r -- " > Origin: «$filename»"
 	print -r -- " > Destination: «$base_dir»"
-	print -r -- " > Multithread Compilation: «$n_cpu»"
+	print -r -- " > Multithread Compilation on: «$n_cpu» cores"
 }
 
 clone_tag() {
@@ -132,9 +130,9 @@ clone_tag() {
 
 	echo
 	echo $yellow"> ${funcstack[1]}() for «$this_package»:"$reset
-	print -r -- " > url: «$url»"
-	print -r -- " > tag: «$tag»"
-	echo " > in directory: $destination_dir"
+	print -r -- " > Git repository: «$url»"
+	print -r -- " > Tag: «$tag»"
+	echo " > Destination directory: $destination_dir"
 
 	# Clone one branch or tag, w/o history, with submodules w/o their history (shallow)
 	local -a args
@@ -143,13 +141,13 @@ clone_tag() {
 	if [[ "$tag" == "dev" ]]; then
 		# "dev" means: shallow clone of the default branch (no release tag)
 		args+=(--depth 1)
-		echo " > command: git ${args[*]} $url $destination_dir"
+		echo " > Command: git ${args[*]} $url $destination_dir"
 		git "${args[@]}" -- "$url" "$destination_dir" 2>&1 | sed 's/^/   /'
 		return ${pipestatus[1]}
 	else
 		# Release tag/branch clone
 		args+=(--branch "$tag")
-		echo " > command: git ${args[*]} $url $destination_dir"
+		echo " > Command: git ${args[*]} $url $destination_dir"
 		git "${args[@]}" -- "$url" "$destination_dir" 2>&1 | sed 's/^/   /'
 		return ${pipestatus[1]}
 	fi
@@ -179,9 +177,9 @@ cmake_build_and_install() {
 
 	echo
 	echo $yellow"> ${funcstack[1]}() for «$this_package»:"$reset
-	echo " > source_dir:    $source_dir"
-	echo " > build_dir:     $build_dir"
-	echo " > install_dir:   $install_dir"
+	echo " > Source_dir:    $source_dir"
+	echo " > Build_dir:     $build_dir"
+	echo " > Install_dir:   $install_dir"
 	echo " > cmake_options: $cmake_options"
 
 	local cmd_start="$SECONDS"

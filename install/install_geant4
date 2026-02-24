@@ -37,7 +37,7 @@ cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmak
 # -DGEANT4_USE_XM=OFF    # on macos
 
 # logging and installing
-log_general "$what" "$what_version" "$url" "$base_dir"
+log_general "$what" "$what_version" "$base_dir"
 clone_tag "$url" "$tag" "$source_dir" "$what"
 cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options" "$what"
 

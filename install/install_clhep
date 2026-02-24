@@ -16,7 +16,7 @@ build_dir=$CLHEP_BASE_DIR/build
 cmake_options="-Wno-dev -DBUILD_STATIC_LIBS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
 
 # logging and installing
-log_general "$what" "$what_version" "$url" "$base_dir"
+log_general "$what" "$what_version" "$base_dir"
 clone_tag "$url" "$tag" "$source_dir" "$what"
 cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options" "$what"
 
