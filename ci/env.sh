@@ -77,7 +77,7 @@ get_novnc_tag() {
 # Single source of truth (order preserved)
 OS_VERSIONS=(
 	"ubuntu=24.04"
-	"fedora=40"
+	"fedora=42"
 	"almalinux=9.4"
 	"debian=12"
 	"archlinux=latest"

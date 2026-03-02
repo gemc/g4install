@@ -19,7 +19,11 @@ This repository provides:
 - Automatically load required dependencies (CLHEP, Xerces-C)
 - Use consistent environments across local systems, Docker, and CVMFS
 
-This is especially useful when validating applications against different Geant4 releases (e.g. `11.3.x` vs `11.4.x`).
+This is especially useful:
+
+- one reliable command to install the latest or past Geant4 versions and its dependencies
+- validating applications against different Geant4 releases (e.g. `11.3.x` vs `11.4.x`)
+
 
 <br/>
 
