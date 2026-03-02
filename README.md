@@ -24,7 +24,6 @@ This is especially useful:
 - one reliable command to install the latest or past Geant4 versions and its dependencies
 - validating applications against different Geant4 releases (e.g. `11.3.x` vs `11.4.x`)
 
-
 <br/>
 
 ## Quick Start (Local Installation)
@@ -36,7 +35,7 @@ Install **Environment Modules**:
 - **Linux**: install `environment-modules` using your package manager
 - **macOS**: `brew install modules`
 
-### Clone and enable modules
+### Clone and enable g4install modules
 
 ```shell
 git clone https://github.com/gemc/g4install
@@ -62,11 +61,6 @@ install_geant4 11.4.0
 module load geant4/11.4.0
 ```
 
-Notice, this also loads:
-
-* [CLHEP](https://gitlab.cern.ch/CLHEP/CLHEP)
-* [Xerces-C](https://github.com/apache/xerces-c.git)
-
 ### Verify active version
 
 ```shell
@@ -88,7 +82,6 @@ module switch geant4/11.3.2 geant4/11.4.0
 # build/test project B
 ```
 
-
 <br/>
 
 ---
@@ -98,7 +91,7 @@ module switch geant4/11.3.2 geant4/11.4.0
 ## Docker Images
 
 Images are built by CI and published to the
-[GitHub Container Registry](https://github.com/gemc/g4install/pkgs/container/g4install).
+[G4Install GitHub Container Registry](https://github.com/gemc/g4install/pkgs/container/g4install).
 
 ### Highlights
 
@@ -123,7 +116,6 @@ GEO_FLAGS=(-e GEOMETRY=1920x1200)
 docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4install:11.4.0-ubuntu-24.04
 ```
 
-
 ---
 
 ## Supported Images (current examples)
@@ -132,21 +124,21 @@ docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4instal
 
 | OS               | Pull Command                                                 | arm64 | amd64 |
 | :--------------- | :----------------------------------------------------------- | :---: | :---: |
-| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.4.0-ubuntu24`         |  yes  |  yes  |
-| fedora 40        | `docker pull ghcr.io/gemc/g4install:11.4.0-fedora40`         |  yes  |  yes  |
-| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.4.0-almalinux9.4`     |  yes  |  yes  |
-| debian 12        | `docker pull ghcr.io/gemc/g4install:11.4.0-debian-12`        |  yes  |  yes  |
-| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.4.0-archlinux-latest` |   no  |  yes  |
+| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.4.0-ubuntu24         ` |   yes |   yes |
+| fedora 42        | `docker pull ghcr.io/gemc/g4install:11.4.0-fedora42         ` |   yes |   yes |
+| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.4.0-almalinux9.4     ` |   yes |   yes |
+| debian 13        | `docker pull ghcr.io/gemc/g4install:11.4.0-debian-13        ` |   yes |   yes |
+| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.4.0-archlinux-latest ` |    no |   yes |
 
 ### Geant4 11.3.2
 
 | OS               | Pull Command                                                 | arm64 | amd64 |
 | :--------------- | :----------------------------------------------------------- | :---: | :---: |
-| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.3.2-ubuntu24`         |  yes  |  yes  |
-| fedora 40        | `docker pull ghcr.io/gemc/g4install:11.3.2-fedora40`         |  yes  |  yes  |
-| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.3.2-almalinux9.4`     |  yes  |  yes  |
-| debian 12        | `docker pull ghcr.io/gemc/g4install:11.3.2-debian-12`        |  yes  |  yes  |
-| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.3.2-archlinux-latest` |   no  |  yes  |
+| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.3.2-ubuntu24         ` |   yes |   yes |
+| fedora 42        | `docker pull ghcr.io/gemc/g4install:11.3.2-fedora42         ` |   yes |   yes |
+| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.3.2-almalinux9.4     ` |   yes |   yes |
+| debian 13        | `docker pull ghcr.io/gemc/g4install:11.3.2-debian-13        ` |   yes |   yes |
+| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.3.2-archlinux-latest ` |    no |   yes |
 
 <br/>
 
@@ -154,14 +146,14 @@ docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4instal
 
 <br/>
 
-
 ## CVMFS Distribution
 
 Geant4 libraries are distributed via CVMFS at:
 
 ```shell
 /cvmfs/jlab.opensciencegrid.org/geant4/g4install
-```
+````
+
 ---
 
 ## Detailed Documentation
@@ -177,4 +169,3 @@ Geant4 libraries are distributed via CVMFS at:
 ## CI Status
 
 [![Build Geant4 Images](https://github.com/gemc/g4install/actions/workflows/docker.yml/badge.svg)](https://github.com/gemc/g4install/actions/workflows/docker.yml)
-

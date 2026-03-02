@@ -193,13 +193,13 @@ cmake_build_and_install() {
 	echo " > cmake build std log: $install_dir/cmake_log.txt"
 	echo " > cmake build std err: $install_dir/cmake_err.txt"
 
-	cmake -DCMAKE_INSTALL_PREFIX="$install_dir" $=cmake_options "$source_dir" 2>"$install_dir/cmake_err.txt" 1>"$install_dir/cmake_log.txt" || whine_and_quit "  >>> failed: cmake -DCMAKE_INSTALL_PREFIX=$install_dir $=cmake_options $source_dir"
+	cmake -DCMAKE_INSTALL_PREFIX="$install_dir" $=cmake_options "$source_dir" 2>"$install_dir/cmake_err.txt" 1>"$install_dir/cmake_log.txt"
 	if [ $? -ne 0 ]; then
 		echo "CMAKE Error Log: "
 		cat $install_dir/cmake_err.txt
 		echo "CMAKE Std Log: "
 		cat $install_dir/cmake_log.txt
-		whine_and_quit "$red $this_package CMAKE Failure"$reset
+		whine_and_quit "$red $this_package CMAKE Command Filed: cmake -DCMAKE_INSTALL_PREFIX=$install_dir $=cmake_options "$reset
 	else
 		echo "$green > $this_package cmake successful"$reset
 	fi
@@ -207,7 +207,7 @@ cmake_build_and_install() {
 	echo "$magenta > Done, now building $this_package using make...$reset"
 	echo " > make std log: $install_dir/build_log.txt"
 	echo " > make std err: $install_dir/build_err.txt"
-	make -j "$n_cpu" 2>$install_dir/build_err.txt 1>"$install_dir/build_log.txt" || whine_and_quit "make -j $n_cpu"
+	make -j "$n_cpu" 2>$install_dir/build_err.txt 1>"$install_dir/build_log.txt"
 	if [ $? -ne 0 ]; then
 		echo "Build Error Log: "
 		cat $install_dir/build_err.txt
@@ -222,7 +222,7 @@ cmake_build_and_install() {
 	echo "$magenta > Done, now installing $this_package...$reset"
 	echo " > install std log: $install_dir/install_log.txt"
 	echo " > install std err: $install_dir/install_err.txt"
-	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt" || whine_and_quit "make install"
+	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt" 
 	if [ $? -ne 0 ]; then
 		echo "make install failed. Install Log: "
 		cat $install_dir/install_log.txt

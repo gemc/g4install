@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ------------------------
-# your existing env pieces
-# ------------------------
-
 source "ci/env.sh"
 
 # helper to build one image tag suffix from os+ver
@@ -42,6 +38,7 @@ image_suffix_for() {
 arch_support() {
     local os="$1"
     local which="$2"  # "arm64" or "amd64"
+
     if [ "$os" = "archlinux" ] && [ "$which" = "arm64" ]; then
         printf 'no'
     else
@@ -49,31 +46,59 @@ arch_support() {
     fi
 }
 
-# this prints ONLY the Markdown table body (header + rows)
-print_table() {
-    local g4tag=$1
+# pretty OS label for README tables
+pretty_os_label() {
+    local os="$1"
+    local ver="$2"
 
-    # header
+    case "$os" in
+        ubuntu)
+            printf 'ubuntu %s' "$ver"
+            ;;
+        fedora)
+            printf 'fedora %s' "$ver"
+            ;;
+        almalinux)
+            printf 'almalinux %s' "$ver"
+            ;;
+        debian)
+            printf 'debian %s' "$ver"
+            ;;
+        archlinux)
+            printf 'archlinux %s' "$ver"
+            ;;
+        *)
+            printf '%s %s' "$os" "$ver"
+            ;;
+    esac
+}
+
+# prints one markdown table for a Geant4 tag
+print_table() {
+    local g4tag="$1"
+
     cat <<'EOF'
-|        OS        |                        Pull Command                        | arm64 |  amd64   |
-|:----------------:|:----------------------------------------------------------:|:-----:|:--------:|
+| OS               | Pull Command                                                 | arm64 | amd64 |
+| :--------------- | :----------------------------------------------------------- | :---: | :---: |
 EOF
 
-    # rows
     for osv in "${OS_VERSIONS[@]}"; do
         local os="${osv%%=*}"
         local ver="${osv#*=}"
 
-        local pretty_os="${os} ${ver}"
+        local pretty_os
+        pretty_os="$(pretty_os_label "$os" "$ver")"
+
         local suffix
         suffix="$(image_suffix_for "$os" "$ver")"
 
         local pull_cmd="docker pull ghcr.io/gemc/g4install:${g4tag}-${suffix}"
-        local arm64="$(arch_support "$os" arm64)"
-        local amd64="$(arch_support "$os" amd64)"
+        local arm64
+        arm64="$(arch_support "$os" arm64)"
+        local amd64
+        amd64="$(arch_support "$os" amd64)"
 
-        # Format columns to look nice. Widths chosen to roughly match your example.
-        printf '| %-15s | %-58s | %-5s | %-8s |\n' \
+        printf '| %-16s | `%-59s` | %5s | %5s |\n' \
             "$pretty_os" \
             "$pull_cmd" \
             "$arm64" \
@@ -81,98 +106,175 @@ EOF
     done
 }
 
-# ------------------------
-# README generator
-# ------------------------
-
 generate_readme() {
     local g4tags latest_g4tag
-
-    g4tags="$(get_geant4_tags)"              # space-separated list
-    latest_g4tag="${g4tags%% *}"             # first token is treated as "latest"
+    g4tags="$(get_geant4_tags)"
+    latest_g4tag="${g4tags%% *}"
 
     {
         cat <<EOF
+# g4install
 
-
+Environment modules, installation scripts, container images, and CVMFS distribution for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
 
 This repository provides:
 
-- module environment for geant4 and installation scripts
-- geant4 docker containers registry for both \`amd64\` and \`arm64\` architectures.
-- CVMFS distribution of Geant4
+- **Environment Modules** + **installation scripts** for [Geant4](https://github.com/Geant4/geant4.git)
+- **Multi-architecture Docker images** (\`amd64\`, \`arm64\`)
+- **CVMFS distribution** of Geant4 builds
 
 <br/>
 
-> [!NOTE]
-> Supported Geant4 Versions:
-$(all_supported_geant4_versions)
+## Why use g4install?
 
-<hr/><br/>
+\`g4install\` is designed to let you:
 
+- Install **multiple Geant4 versions side-by-side**
+- Switch between versions quickly using \`module load\` / \`module switch\`
+- Automatically load required dependencies (CLHEP, Xerces-C)
+- Use consistent environments across local systems, Docker, and CVMFS
 
-## Built Images
+This is especially useful:
 
-Docker Containers Images are created by Continuous Integration and published to the
-[GitHub registry](https://github.com/gemc/g4install/pkgs/container/g4install).
+- one reliable command to install the latest or past Geant4 versions and its dependencies
+- validating applications against different Geant4 releases (e.g. \`11.3.x\` vs \`11.4.x\`)
 
-- The images are a stitch of both architectures, so \`docker run\` does not need additional platform directives or emulations:
-the same command can be used on intel/silicon cpus.
-- The images can be run in batch mode or with GUI (noVNC, using a browser or VNC client).
+<br/>
 
-The images contain Geant4 and ROOT.
-Geant4 libraries are distributed on CVMFS at \`/cvmfs/jlab.opensciencegrid.org/geant4/g4install\`
+## Quick Start (Local Installation)
 
+### Prerequisites
 
-### Running Images in batch mode
+Install **Environment Modules**:
 
-Example:
+- **Linux**: install \`environment-modules\` using your package manager
+- **macOS**: \`brew install modules\`
 
+### Clone and enable g4install modules
+
+\`\`\`shell
+git clone https://github.com/gemc/g4install
+module use /path/to/g4install
 \`\`\`
-docker run --rm -it ghcr.io/gemc/g4install:11.4.0-ubuntu-24.04 bash -li
+
+### List available Geant4 versions
+
+\`\`\`shell
+module avail geant4
 \`\`\`
 
-### Running Images in graphical mode with VNC/noVNC
+### Install a Geant4 version (example: ${latest_g4tag})
 
-Use these convenience variables:
-
+\`\`\`shell
+module load sim_system
+install_geant4 ${latest_g4tag}
 \`\`\`
+
+### Load a Geant4 version
+
+\`\`\`shell
+module load geant4/${latest_g4tag}
+\`\`\`
+
+### Verify active version
+
+\`\`\`shell
+geant4-config --version
+which geant4-config
+\`\`\`
+
+<br/>
+
+## Seamless Multi-Version Switching
+
+One of the main features of \`g4install\` is the ability to keep multiple versions installed and switch between them without conflicts.
+
+\`\`\`shell
+module load geant4/11.3.2
+# build/test project A
+
+module switch geant4/11.3.2 geant4/11.4.0
+# build/test project B
+\`\`\`
+
+<br/>
+
+---
+
+<br/>
+
+## Docker Images
+
+Images are built by CI and published to the
+[G4Install GitHub Container Registry](https://github.com/gemc/g4install/pkgs/container/g4install).
+
+### Highlights
+
+* **Multi-arch tags** (same tag works on Intel and Apple Silicon)
+* **Batch mode** and **GUI mode** (VNC / noVNC)
+* Includes **Geant4** and **ROOT**
+
+### Batch mode example
+
+\`\`\`shell
+docker run --rm -it ghcr.io/gemc/g4install:${latest_g4tag}-ubuntu-24.04 bash -li
+\`\`\`
+
+### GUI mode example (VNC / noVNC)
+
+\`\`\`shell
 VPORTS=(-p 6080:6080 -p 5900:5900)
 VNC_PASS=(-e X11VNC_PASSWORD=change-me)
 VNC_BIND=(-e VNC_BIND=0.0.0.0)
 GEO_FLAGS=(-e GEOMETRY=1920x1200)
+
+docker run --rm -it \$VPORTS \$VNC_BIND \$VNC_PASS \$GEO_FLAGS ghcr.io/gemc/g4install:${latest_g4tag}-ubuntu-24.04
 \`\`\`
 
+---
 
-Then run docker with:
+## Supported Images (current examples)
 
-\`\`\`
-docker run --rm -it \$VPORTS \$VNC_BIND \$VNC_PASS \$GEO_FLAGS ghcr.io/gemc/g4install:11.4.0-ubuntu-24.04
-\`\`\`
+EOF
 
-The supported images are listed below.
+        for g4tag in $g4tags; do
+            printf '### Geant4 %s\n\n' "$g4tag"
+            print_table "$g4tag"
+            printf '\n'
+        done
+
+        cat <<'EOF'
+<br/>
+
+---
 
 <br/>
 
+## CVMFS Distribution
 
-EOF
+Geant4 libraries are distributed via CVMFS at:
 
-        # Insert a table for each Geant4 version from get_geant4_tags()
-        for g4tag in $g4tags; do
-        	echo "### Geant4 $g4tag:"
-            print_table "$g4tag"
-            echo "<br/>"
-            echo    # blank line between tables (Markdown readability)
-        done
+```shell
+/cvmfs/jlab.opensciencegrid.org/geant4/g4install
+````
 
-        cat <<EOF
+---
 
-## Status Badges:
+## Detailed Documentation
+
+* **Multi-version workflow / switching guide**: `multi-version-workflow.md`
+
+<br/>
+
+---
+
+<br/>
+
+## CI Status
 
 [![Build Geant4 Images](https://github.com/gemc/g4install/actions/workflows/docker.yml/badge.svg)](https://github.com/gemc/g4install/actions/workflows/docker.yml)
 EOF
-    } > README.md
+} > README.md
 }
 
-# actually run it if this script is executed directly
 generate_readme
