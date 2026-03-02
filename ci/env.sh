@@ -79,6 +79,6 @@ OS_VERSIONS=(
 	"ubuntu=24.04"
 	"fedora=42"
 	"almalinux=9.4"
-	"debian=12"
+	"debian=13"
 	"archlinux=latest"
 )
