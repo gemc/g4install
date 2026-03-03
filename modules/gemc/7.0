@@ -1,0 +1,21 @@
+#%Module
+module-whatis Geant4 Monte-Carlo (GEMC), https://gemc.github.io/home
+
+set version [file tail [module-info version [module-info name]]]
+set gname clas12Tags
+
+source [file dirname $ModulesCurrentModulefile]/../util/functions.tcl
+set dir [home]/[osrelease]/$gname/7.0
+set ilib $dir/lib
+
+prepend-ldpath $ilib
+prepend-path   PKG_CONFIG_PATH $ilib/pkgconfig
+prepend-path   PATH        $dir/bin
+prepend-path   PATH        $dir/api/perl
+prepend-path   PYTHONPATH  $dir/api
+
+setenv GEMC           $dir
+setenv GEMC_DATA_DIR  $dir
+setenv FIELD_DIR  [home]/noarch/data/magfield
+
+

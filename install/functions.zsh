@@ -222,7 +222,7 @@ cmake_build_and_install() {
 	echo "$magenta > Done, now installing $this_package...$reset"
 	echo " > install std log: $install_dir/install_log.txt"
 	echo " > install std err: $install_dir/install_err.txt"
-	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt" 
+	make install 2>$install_dir/install_err.txt 1>"$install_dir/install_log.txt"
 	if [ $? -ne 0 ]; then
 		echo "make install failed. Install Log: "
 		cat $install_dir/install_log.txt

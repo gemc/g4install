@@ -1,6 +1,7 @@
 # g4install
 
-Environment modules, installation scripts, container images, and CVMFS distribution for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
+Environment modules, installation scripts, [container images](https://github.com/gemc/g4install/pkgs/container/g4install), 
+and CVMFS distribution for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
 
 This repository provides:
 
