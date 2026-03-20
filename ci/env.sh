@@ -7,7 +7,7 @@ lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 supported_g4_versions="11.4.1"
 root_version="6.38.04"
 meson_version="1.10.2"
-novnc_version="1.6.0"
+novnc_version="v1.6.0"
 
 # Returns success if $1 is in $supported_g4_versions
 is_supported_g4_version() {
