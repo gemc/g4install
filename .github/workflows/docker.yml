@@ -4,13 +4,6 @@ permissions:
   contents: read
   packages: write
 
-# default varsions. This is overwritten by distros_tags.sh
-env:
-  ROOT_TAG: v6-36-04      # default ROOT tag
-  MESON_TAG: 1.9.0        # default Meson version
-  NOVNC_TAG: v1.6.0       # default noVNC tag
-  GEANT4_TAG: 11.4.0      # default geant4 tag
-
 concurrency:
   group: geant4-images-${{ github.ref }}
   cancel-in-progress: true
@@ -137,10 +130,10 @@ jobs:
           python3 ci/dockerfile_creator.py \
           -i "${{ matrix.image }}" \
           -t "${{ matrix.image_tag }}" \
-          --root-version "${{ matrix.root_tag || env.ROOT_TAG  }}" \
-          --meson-version "${{ matrix.meson_tag || env.MESON_TAG  }}" \
-          --novnc-version "${{ matrix.novnc_tag || env.NOVNC_TAG }}" \
-          --geant4-version "${{ matrix.geant4_tag || env.GEANT4_TAG }}" \
+          --root-version "${{ matrix.root_tag }}" \
+          --meson-version "${{ matrix.meson_tag }}" \
+          --novnc-version "${{ matrix.novnc_tag  }}" \
+          --geant4-version "${{ matrix.geant4_tag }}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
