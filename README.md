@@ -1,13 +1,13 @@
 # g4install
 
+
 Environment modules, installation scripts, [container images](https://github.com/gemc/g4install/pkgs/container/g4install), 
 and CVMFS distribution for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
 
 This repository provides:
 
 - **Environment Modules** + **installation scripts** for [Geant4](https://github.com/Geant4/geant4.git)
-- **Multi-architecture Docker images** (`amd64`, `arm64`)
-- **CVMFS distribution** of Geant4 builds
+- **Multi-architecture Docker images** vi CI(`amd64`, `arm64`)
 
 <br/>
 
@@ -17,8 +17,8 @@ This repository provides:
 
 - Install **multiple Geant4 versions side-by-side**
 - Switch between versions quickly using `module load` / `module switch`
-- Automatically load required dependencies (CLHEP, Xerces-C)
-- Use consistent environments across local systems, Docker, and CVMFS
+- Automatically install and load required dependencies (CLHEP, Xerces-C)
+- Easy, consistent, shell independent environment
 
 This is especially useful:
 
@@ -36,33 +36,39 @@ Install **Environment Modules**:
 - **Linux**: install `environment-modules` using your package manager
 - **macOS**: `brew install modules`
 
-### Clone and enable g4install modules
+### 1. Clone and enable g4install modules
+
+Here we use `/path/to/g4install` as an example. 
 
 ```shell
 git clone https://github.com/gemc/g4install
 module use /path/to/g4install
 ```
 
-### List available Geant4 versions
+We recommend adding the `module use` command to your 
+shell init script, like `.bashrc` or `.cshrc`. 
+
+
+You can now list supported Geant4 versions:
 
 ```shell
 module avail geant4
 ```
 
-### Install a Geant4 version (example: 11.4.0)
+### 2. Install a Geant4 version (example: 11.4.1  )
 
 ```shell
 module load sim_system
-install_geant4 11.4.0
+install_geant4 11.4.1
 ```
 
-### Load a Geant4 version
+### 3. Load a Geant4 version
 
 ```shell
-module load geant4/11.4.0
+module load geant4/11.4.1
 ```
-
-### Verify active version
+ 
+To verify an active version
 
 ```shell
 geant4-config --version
@@ -79,15 +85,12 @@ One of the main features of `g4install` is the ability to keep multiple versions
 module load geant4/11.3.2
 # build/test project A
 
-module switch geant4/11.3.2 geant4/11.4.0
+module switch geant4/11.4.1
 # build/test project B
 ```
 
 <br/>
 
----
-
-<br/>
 
 ## Docker Images
 
@@ -117,56 +120,74 @@ GEO_FLAGS=(-e GEOMETRY=1920x1200)
 docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4install:11.4.0-ubuntu-24.04
 ```
 
----
+
 
 ## Supported Images (current examples)
 
-### Geant4 11.4.0
+### Latest Geant4 (11.4.1)
 
-| OS               | Pull Command                                                 | arm64 | amd64 |
-| :--------------- | :----------------------------------------------------------- | :---: | :---: |
-| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.4.0-ubuntu24         ` |   yes |   yes |
-| fedora 42        | `docker pull ghcr.io/gemc/g4install:11.4.0-fedora42         ` |   yes |   yes |
-| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.4.0-almalinux9.4     ` |   yes |   yes |
-| debian 13        | `docker pull ghcr.io/gemc/g4install:11.4.0-debian-13        ` |   yes |   yes |
-| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.4.0-archlinux-latest ` |    no |   yes |
+| OS               | Pull Command                                                  | arm64 | amd64 |
+| :--------------- |:--------------------------------------------------------------| :---: | :---: |
+| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.4.1-ubuntu24         ` |   yes |   yes |
+| fedora 42        | `docker pull ghcr.io/gemc/g4install:11.4.1-fedora42         ` |   yes |   yes |
+| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.4.1-almalinux9.4     ` |   yes |   yes |
+| debian 13        | `docker pull ghcr.io/gemc/g4install:11.4.1-debian-13        ` |   yes |   yes |
+| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.4.1-archlinux-latest ` |    no |   yes |
 
-### Geant4 11.3.2
+To list all suported version check 
+the [github registry for g4install](https://github.com/gemc/g4install/pkgs/container/g4install/versions)
 
-| OS               | Pull Command                                                 | arm64 | amd64 |
-| :--------------- | :----------------------------------------------------------- | :---: | :---: |
-| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.3.2-ubuntu24         ` |   yes |   yes |
-| fedora 42        | `docker pull ghcr.io/gemc/g4install:11.3.2-fedora42         ` |   yes |   yes |
-| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.3.2-almalinux9.4     ` |   yes |   yes |
-| debian 13        | `docker pull ghcr.io/gemc/g4install:11.3.2-debian-13        ` |   yes |   yes |
-| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.3.2-archlinux-latest ` |    no |   yes |
+
 
 <br/>
 
----
 
-<br/>
 
-## CVMFS Distribution
 
-Geant4 libraries are distributed via CVMFS at:
+## Troubleshooting
+
+### `module: command not found`
+
+Environment Modules is not installed or not initialized in the current shell.
+
+* Install `environment-modules` (Linux) or `modules` (macOS/Homebrew)
+* Start a login shell or source your shell initialization files
+
+### `module avail geant4` shows nothing
+
+Confirm the repository is added to the module search path:
 
 ```shell
-/cvmfs/jlab.opensciencegrid.org/geant4/g4install
-````
+module use /path/to/g4install
+```
 
----
+### The wrong Geant4 version is being picked up
 
-## Detailed Documentation
+Check current shell state:
 
-* **Multi-version workflow / switching guide**: `multi-version-workflow.md`
+```shell
+module list
+which geant4-config
+geant4-config --version
+```
 
-<br/>
+If needed:
 
----
+```shell
+module purge
+module use /path/to/g4install
+module load geant4/<desired-version>
+```
+
+
+
 
 <br/>
 
 ## CI Status
 
 [![Build Geant4 Images](https://github.com/gemc/g4install/actions/workflows/docker.yml/badge.svg)](https://github.com/gemc/g4install/actions/workflows/docker.yml)
+
+
+
+
