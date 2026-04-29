@@ -1,8 +1,8 @@
 # g4install
 
 
-Environment modules, installation scripts, [container images](https://github.com/gemc/g4install/pkgs/container/g4install), 
-and CVMFS distribution for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
+Environment modules, installation scripts and [container images](https://github.com/gemc/g4install/pkgs/container/g4install), 
+for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
 
 This repository provides:
 
@@ -13,12 +13,12 @@ This repository provides:
 
 ## Why use g4install?
 
-`g4install` is designed to let you:
+g4install is designed to let you:
 
 - Install **multiple Geant4 versions side-by-side**
 - Switch between versions quickly using `module load` / `module switch`
 - Automatically install and load required dependencies (CLHEP, Xerces-C)
-- Easy, consistent, shell independent environment
+- Use an easy, consistent, shell independent environment
 
 This is especially useful:
 
@@ -27,7 +27,7 @@ This is especially useful:
 
 <br/>
 
-## Quick Start (Local Installation)
+## Local Installation
 
 ### Prerequisites
 
@@ -67,13 +67,7 @@ install_geant4 11.4.1
 ```shell
 module load geant4/11.4.1
 ```
- 
-To verify an active version
 
-```shell
-geant4-config --version
-which geant4-config
-```
 
 <br/>
 
@@ -120,19 +114,19 @@ GEO_FLAGS=(-e GEOMETRY=1920x1200)
 docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4install:11.4.0-ubuntu-24.04
 ```
 
-
+<br/>
 
 ## Supported Images (current examples)
 
 ### Latest Geant4 (11.4.1)
 
-| OS               | Pull Command                                                  | arm64 | amd64 |
-| :--------------- |:--------------------------------------------------------------| :---: | :---: |
-| ubuntu 24.04     | `docker pull ghcr.io/gemc/g4install:11.4.1-ubuntu24         ` |   yes |   yes |
-| fedora 42        | `docker pull ghcr.io/gemc/g4install:11.4.1-fedora42         ` |   yes |   yes |
-| almalinux 9.4    | `docker pull ghcr.io/gemc/g4install:11.4.1-almalinux9.4     ` |   yes |   yes |
-| debian 13        | `docker pull ghcr.io/gemc/g4install:11.4.1-debian-13        ` |   yes |   yes |
-| archlinux latest | `docker pull ghcr.io/gemc/g4install:11.4.1-archlinux-latest ` |    no |   yes |
+| OS               | Registry address                                  | arm64 | amd64 |
+|:-----------------|:--------------------------------------------------| :---: | :---: |
+| ubuntu 24.04     | `ghcr.io/gemc/g4install:11.4.1-ubuntu24         ` |   yes |   yes |
+| fedora 42        | `ghcr.io/gemc/g4install:11.4.1-fedora42         ` |   yes |   yes |
+| almalinux 9.4    | `ghcr.io/gemc/g4install:11.4.1-almalinux9.4     ` |   yes |   yes |
+| debian 13        | `ghcr.io/gemc/g4install:11.4.1-debian-13        ` |   yes |   yes |
+| archlinux latest | `ghcr.io/gemc/g4install:11.4.1-archlinux-latest ` |    no |   yes |
 
 To list all suported version check 
 the [github registry for g4install](https://github.com/gemc/g4install/pkgs/container/g4install/versions)
