@@ -144,6 +144,8 @@ jobs:
 
       - name: Build & Push
         uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_SUMMARY: false
         with:
           # pull ensure we have the latest base image
           pull: true

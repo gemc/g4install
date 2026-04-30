@@ -31,7 +31,7 @@ ensure_modules() {
 
 	# If already available, note when it's a function and return
 	if module_is_available; then
-		note_if_module_is_function
+		# note_if_module_is_function
 		return 0
 	fi
 
@@ -43,7 +43,7 @@ ensure_modules() {
 		# shellcheck disable=SC1090
 		. "$brew_init" || die "failed to source $brew_init"
 		module_is_available || die "sourced $brew_init but 'module' is still unavailable"
-		note_if_module_is_function
+		# note_if_module_is_function
 		return 0
 	fi
 
@@ -74,7 +74,7 @@ ensure_modules() {
 
 	[ -n "$found" ] || die "no Environment Modules init script found"
 	module_is_available || die "sourced $found but 'module' is still unavailable"
-	note_if_module_is_function
+	# note_if_module_is_function
 }
 
 ensure_modules
