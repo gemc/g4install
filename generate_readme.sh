@@ -8,20 +8,17 @@ image_suffix_for() {
     local os="$1"
     local ver="$2"
 
-    # major of "24.04" -> "24", "9.4" -> "9", "latest" -> "latest"
-    local maj="${ver%%.*}"
-
     case "$os" in
         ubuntu)
             # ubuntu24
-            printf '%s%s' "$os" "$maj"
+            printf '%s-%s' "$os" "$ver"
             ;;
         fedora|almalinux)
-            # fedora40 , almalinux9.4
-            printf '%s%s' "$os" "$ver"
+            # fedora-42 , almalinux-9.4
+            printf '%s-%s' "$os" "$ver"
             ;;
         debian)
-            # debian-12
+            # debian-13
             printf '%s-%s' "$os" "$ver"
             ;;
         archlinux)
@@ -78,7 +75,7 @@ print_table() {
     local g4tag="$1"
 
     cat <<'EOF'
-| OS               | Pull Command                                                 | arm64 | amd64 |
+| OS               | Container Registry                                           | arm64 | amd64 |
 | :--------------- | :----------------------------------------------------------- | :---: | :---: |
 EOF
 
@@ -92,7 +89,7 @@ EOF
         local suffix
         suffix="$(image_suffix_for "$os" "$ver")"
 
-        local pull_cmd="docker pull ghcr.io/gemc/g4install:${g4tag}-${suffix}"
+        local pull_cmd="ghcr.io/gemc/g4install:${g4tag}-${suffix}"
         local arm64
         arm64="$(arch_support "$os" arm64)"
         local amd64
@@ -110,29 +107,31 @@ generate_readme() {
     local g4tags latest_g4tag
     g4tags="$(get_geant4_tags)"
     latest_g4tag="${g4tags%% *}"
+    local ostags="$OS_VERSIONS"
+    local firstos="${ostags%% *}"
 
     {
         cat <<EOF
 # g4install
 
-Environment modules, installation scripts, container images, and CVMFS distribution for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
+Environment modules, installation scripts and [container images](https://github.com/gemc/g4install/pkgs/container/g4install)
+for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
 
 This repository provides:
 
 - **Environment Modules** + **installation scripts** for [Geant4](https://github.com/Geant4/geant4.git)
 - **Multi-architecture Docker images** (\`amd64\`, \`arm64\`)
-- **CVMFS distribution** of Geant4 builds
 
 <br/>
 
 ## Why use g4install?
 
-\`g4install\` is designed to let you:
+g4install is designed to let you:
 
 - Install **multiple Geant4 versions side-by-side**
 - Switch between versions quickly using \`module load\` / \`module switch\`
-- Automatically load required dependencies (CLHEP, Xerces-C)
-- Use consistent environments across local systems, Docker, and CVMFS
+- Automatically install and load required dependencies (CLHEP, Xerces-C)
+- Use an easy, consistent, shell independent environment
 
 This is especially useful:
 
@@ -141,7 +140,7 @@ This is especially useful:
 
 <br/>
 
-## Quick Start (Local Installation)
+## Installation
 
 ### Prerequisites
 
@@ -150,38 +149,39 @@ Install **Environment Modules**:
 - **Linux**: install \`environment-modules\` using your package manager
 - **macOS**: \`brew install modules\`
 
-### Clone and enable g4install modules
+### 1. Clone and enable g4install modules
+
+Here we use \`/path/to/g4install\` as an example.
 
 \`\`\`shell
 git clone https://github.com/gemc/g4install
 module use /path/to/g4install
 \`\`\`
 
-### List available Geant4 versions
+We recommend adding the \`module use\` command to your
+shell init script, like \`.bashrc\` or \`.cshrc\`.
+
+
+You can now list supported Geant4 versions:
+
 
 \`\`\`shell
 module avail geant4
 \`\`\`
 
-### Install a Geant4 version (example: ${latest_g4tag})
+### 2. Install a Geant4 version (example: ${latest_g4tag})
 
 \`\`\`shell
 module load sim_system
 install_geant4 ${latest_g4tag}
 \`\`\`
 
-### Load a Geant4 version
+### 3. Load a Geant4 version
 
 \`\`\`shell
 module load geant4/${latest_g4tag}
 \`\`\`
 
-### Verify active version
-
-\`\`\`shell
-geant4-config --version
-which geant4-config
-\`\`\`
 
 <br/>
 
@@ -193,13 +193,10 @@ One of the main features of \`g4install\` is the ability to keep multiple versio
 module load geant4/11.3.2
 # build/test project A
 
-module switch geant4/11.3.2 geant4/11.4.0
+module switch geant4/${latest_g4tag}
 # build/test project B
 \`\`\`
 
-<br/>
-
----
 
 <br/>
 
@@ -217,7 +214,7 @@ Images are built by CI and published to the
 ### Batch mode example
 
 \`\`\`shell
-docker run --rm -it ghcr.io/gemc/g4install:${latest_g4tag}-ubuntu-24.04 bash -li
+docker run --rm -it ghcr.io/gemc/g4install:${latest_g4tag}-${firstos} bash -li
 \`\`\`
 
 ### GUI mode example (VNC / noVNC)
@@ -228,12 +225,11 @@ VNC_PASS=(-e X11VNC_PASSWORD=change-me)
 VNC_BIND=(-e VNC_BIND=0.0.0.0)
 GEO_FLAGS=(-e GEOMETRY=1920x1200)
 
-docker run --rm -it \$VPORTS \$VNC_BIND \$VNC_PASS \$GEO_FLAGS ghcr.io/gemc/g4install:${latest_g4tag}-ubuntu-24.04
+docker run --rm -it \$VPORTS \$VNC_BIND \$VNC_PASS \$GEO_FLAGS ghcr.io/gemc/g4install:${latest_g4tag}-${firstos}
 \`\`\`
 
----
 
-## Supported Images (current examples)
+## Supported Images
 
 EOF
 
@@ -246,29 +242,46 @@ EOF
         cat <<'EOF'
 <br/>
 
----
 
 <br/>
 
-## CVMFS Distribution
 
-Geant4 libraries are distributed via CVMFS at:
+## Troubleshooting
 
-```shell
-/cvmfs/jlab.opensciencegrid.org/geant4/g4install
-````
+### `module: command not found`
 
----
+Environment Modules is not installed or not initialized in the current shell.
 
-## Detailed Documentation
+* Install `environment-modules` (Linux) or `modules` (macOS/Homebrew)
+* Start a login shell or source your shell initialization files
 
-* **Multi-version workflow / switching guide**: `multi-version-workflow.md`
+### `module avail geant4` shows nothing
 
-<br/>
+Confirm the repository is added to the module search path:
 
----
+\`\`\`shell
+module use /path/to/g4install
+\`\`\`
 
-<br/>
+### The wrong Geant4 version is being picked up
+
+Check current shell state:
+
+\`\`\`shell
+module list
+which geant4-config
+geant4-config --version
+\`\`\`
+
+
+Reset env needed:
+
+\`\`\`shell
+module purge
+module use /path/to/g4install
+module load geant4/<desired-version>
+\`\`\`
+
 
 ## CI Status
 
