@@ -27,7 +27,7 @@ pkg_sections = {
 	},
 	"python_ninja":   {
 		"fedora":    ["python3-devel", "ninja-build"],
-		"debian":    ["python3-dev", "ninja-build"],
+		"debian":    ["python3-dev", "python3-venv", "ninja-build"],
 		"archlinux": ["python", "python-pip", "ninja"],
 	},
 	"x11_1":          {
