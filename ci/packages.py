@@ -96,7 +96,7 @@ def debian_adjustments(pkgs: list[str]) -> list[str]:
 
 
 def fedora_adjustments(pkgs: list[str]) -> list[str]:
-	# replace tint2 with lxqt-panel (for alma -> fedora)
+	# replace tint2 with lxqt-panel (Fedora dropped tint2)
 	rep = {
 		"tint2": "lxqt-panel"
 	}
@@ -106,7 +106,18 @@ def fedora_adjustments(pkgs: list[str]) -> list[str]:
 	return out
 
 
-def packages_to_be_installed(image: str) -> str:
+def almalinux10_adjustments(pkgs: list[str]) -> list[str]:
+	# AlmaLinux 10 (RHEL 10): tint2 is not in the synergy repo
+	rep = {
+		"tint2": "lxqt-panel"
+	}
+	out = []
+	for p in pkgs:
+		out.append(rep.get(p, p))
+	return out
+
+
+def packages_to_be_installed(image: str, tag: str = "") -> str:
 	family = map_family(image)  # e.g., 'debian' (for ubuntu), 'fedora', 'arch'
 
 	pkgs = []
@@ -120,14 +131,17 @@ def packages_to_be_installed(image: str) -> str:
 	if image == "fedora":
 		pkgs = fedora_adjustments(pkgs)
 
+	if image == "almalinux" and tag.startswith("10"):
+		pkgs = almalinux10_adjustments(pkgs)
+
 	# De-dupe but KEEP section order
 	pkgs = unique_preserve_order(pkgs)
 	return ' '.join(pkgs)
 
 
-def packages_install_command(image: str) -> str:
+def packages_install_command(image: str, tag: str = "") -> str:
 	family = map_family(image)
-	packages = packages_to_be_installed(image)
+	packages = packages_to_be_installed(image, tag)
 
 	# Single place for the log file; put it somewhere writable during build.
 	log = "/tmp/packages-install.log"

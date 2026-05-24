@@ -110,18 +110,20 @@ def install_jlab_ca(image: str) -> str:
 	return commands
 
 
-def additional_preamble(image: str) -> str:
+def additional_preamble(image: str, tag: str = "") -> str:
 	family = map_family(image)
 	is_alma = "almalinux" in image.lower()
+	is_alma9 = is_alma and tag.startswith("9")
 	commands = "\n"
 	if family == "fedora":
 		if is_alma:
 			commands += (
-				"# AlmaLinux synergy \\\n"
+				"# AlmaLinux: enable CRB and synergy repos\n"
 				"RUN dnf install -y 'dnf-command(config-manager)' \\\n"
 				"    && dnf config-manager --set-enabled crb \\\n"
 				"    && dnf install -y almalinux-release-synergy \n\n"
 			)
+		if is_alma9:
 			commands += (
 				"# AlmaLinux 9 ships Python 3.9; pygemc and other tools require >=3.10.\n"
 				"# Install 3.11 from AppStream and make it the system python3.\n"
@@ -146,8 +148,8 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
 	commands += docker_header(image, tag)
 	commands += copy_setup_file(image)
 	commands += install_jlab_ca(image)
-	commands += additional_preamble(image)
-	commands += packages_install_command(image)
+	commands += additional_preamble(image, tag)
+	commands += packages_install_command(image, tag)
 	commands += cleanup_string_by_family[map_family(image)]
 	commands += install_additional_libraries(image,
 	                                         geant4_version,
