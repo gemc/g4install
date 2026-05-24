@@ -66,7 +66,7 @@ pkg_sections = {
 	},
 	"qt6":            {
 		"fedora":    ["qt6-qtbase-devel", "qt6-qtsvg", "qt6-qtsvg-devel"],
-		"debian":    ["qt6-base-dev", "libqt6opengl6t64", "libqt6openglwidgets6t64", "qt6-base-dev-tools", "libqt6svg6",  "qt6-svg-dev"],
+		"debian":    ["qt6-base-dev", "libqt6opengl6", "libqt6openglwidgets6", "qt6-base-dev-tools", "libqt6svg6",  "qt6-svg-dev"],
 		"archlinux": ["qt6-base", "qt6-svg"],
 	},
 	"root":           {
@@ -83,11 +83,10 @@ pkg_sections = {
 
 
 def debian_adjustments(pkgs: list[str]) -> list[str]:
-	# replace Ubuntu’s t64 Qt libs with Debian names
+	# Debian ships libqt6opengl6-dev instead of libqt6opengl6 (Ubuntu name)
 	rep = {
-		"libqt6opengl6t64":        "libqt6opengl6-dev",
-		"libqt6openglwidgets6t64": "libqt6openglwidgets6",
-		"libmysqlclient-dev":      "libmariadb-dev"
+		"libqt6opengl6":      "libqt6opengl6-dev",
+		"libmysqlclient-dev": "libmariadb-dev"
 	}
 	out = []
 	for p in pkgs:
@@ -107,18 +106,16 @@ def fedora_adjustments(pkgs: list[str]) -> list[str]:
 
 
 def almalinux10_adjustments(pkgs: list[str]) -> list[str]:
-	# AlmaLinux 10 (RHEL 10): VNC/desktop stack not available in standard repos.
+	# AlmaLinux 10 (RHEL 10): VNC/desktop stack not available in standard repos;
+	# xrandr binary is in xorg-x11-server-utils, not the standalone xrandr package.
 	remove = {"tint2", "lxqt-panel", "x11vnc", "openbox", "xorg-x11-server-Xvfb"}
-	return [p for p in pkgs if p not in remove]
-
-
-def ubuntu26_adjustments(pkgs: list[str]) -> list[str]:
-	# Ubuntu 26.04: t64 transition complete, packages dropped the suffix.
-	rep = {
-		"libqt6opengl6t64":        "libqt6opengl6",
-		"libqt6openglwidgets6t64": "libqt6openglwidgets6",
-	}
-	return [rep.get(p, p) for p in pkgs]
+	rep = {"xrandr": "xorg-x11-server-utils"}
+	out = []
+	for p in pkgs:
+		if p in remove:
+			continue
+		out.append(rep.get(p, p))
+	return out
 
 
 def packages_to_be_installed(image: str, tag: str = "") -> str:
@@ -137,9 +134,6 @@ def packages_to_be_installed(image: str, tag: str = "") -> str:
 
 	if image == "almalinux" and tag.startswith("10"):
 		pkgs = almalinux10_adjustments(pkgs)
-
-	if image == "ubuntu" and tag.startswith("26"):
-		pkgs = ubuntu26_adjustments(pkgs)
 
 	# De-dupe but KEEP section order
 	pkgs = unique_preserve_order(pkgs)
