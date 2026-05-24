@@ -126,9 +126,10 @@ def additional_preamble(image: str, tag: str = "") -> str:
 		if is_alma9:
 			commands += (
 				"# AlmaLinux 9 ships Python 3.9; pygemc and other tools require >=3.10.\n"
-				"# Install 3.11 from AppStream and make it the system python3.\n"
-				"RUN dnf install -y python3.11 python3.11-devel \\\n"
-				"    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \n\n"
+				"# Install 3.11 from AppStream. The python3 symlink is set in\n"
+				"# post_package_setup(), after the main package install, to prevent\n"
+				"# dnf from resetting it to 3.9 via the alternatives system.\n"
+				"RUN dnf install -y python3.11 python3.11-devel \n\n"
 			)
 
 	elif family == "debian":
@@ -141,6 +142,19 @@ def additional_preamble(image: str, tag: str = "") -> str:
 	return commands
 
 
+def post_package_setup(image: str, tag: str = "") -> str:
+	"""Steps that must run after package installation.
+	Symlinks set here cannot be clobbered by dnf alternatives."""
+	is_alma9 = "almalinux" in image.lower() and tag.startswith("9")
+	if is_alma9:
+		return (
+			"# Pin python3 → 3.11 after all packages are installed so dnf\n"
+			"# alternatives cannot reset the symlink to 3.9.\n"
+			"RUN ln -sf /usr/bin/python3.11 /usr/bin/python3\n\n"
+		)
+	return ""
+
+
 def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: str,
                       meson_version: str,
                       novnc_version: str) -> str:
@@ -150,6 +164,7 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
 	commands += install_jlab_ca(image)
 	commands += additional_preamble(image, tag)
 	commands += packages_install_command(image, tag)
+	commands += post_package_setup(image, tag)
 	commands += cleanup_string_by_family[map_family(image)]
 	commands += install_additional_libraries(image,
 	                                         geant4_version,
