@@ -32,7 +32,7 @@ jobs:
             echo ""
             echo "## Component versions"
             echo ""
-            echo "| Geant4 | ROOT | Meson | noVNC |"
+            echo "| [Geant4](https://geant4.web.cern.ch) | [ROOT](https://root.cern) | [Meson](https://mesonbuild.com) | [noVNC](https://novnc.com) |"
             echo "|---|---|---|---|"
 
             MATRIX='${{ needs.discover.outputs.matrix_build }}'

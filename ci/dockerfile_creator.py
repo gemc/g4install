@@ -164,8 +164,8 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
 	commands += install_jlab_ca(image)
 	commands += additional_preamble(image, tag)
 	commands += packages_install_command(image, tag)
-	commands += post_package_setup(image, tag)
 	commands += cleanup_string_by_family[map_family(image)]
+	commands += post_package_setup(image, tag)
 	commands += install_additional_libraries(image,
 	                                         geant4_version,
 	                                         root_version,
@@ -212,7 +212,7 @@ def main():
 		help="Version of Meson to install (default: %(default)s)"
 	)
 	parser.add_argument(
-		"--novnc-version", default="v1.6.0",
+		"--novnc-version", default="v1.7.0",
 		help="Version of noVNC to install (default: %(default)s)"
 	)
 	parser.add_argument(
