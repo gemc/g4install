@@ -122,6 +122,12 @@ def additional_preamble(image: str) -> str:
 				"    && dnf config-manager --set-enabled crb \\\n"
 				"    && dnf install -y almalinux-release-synergy \n\n"
 			)
+			commands += (
+				"# AlmaLinux 9 ships Python 3.9; pygemc and other tools require >=3.10.\n"
+				"# Install 3.11 from AppStream and make it the system python3.\n"
+				"RUN dnf install -y python3.11 python3.11-devel \\\n"
+				"    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \n\n"
+			)
 
 	elif family == "debian":
 		commands += ""
