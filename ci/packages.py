@@ -107,14 +107,18 @@ def fedora_adjustments(pkgs: list[str]) -> list[str]:
 
 
 def almalinux10_adjustments(pkgs: list[str]) -> list[str]:
-	# AlmaLinux 10 (RHEL 10): tint2 is not in the synergy repo
+	# AlmaLinux 10 (RHEL 10): VNC/desktop stack not available in standard repos.
+	remove = {"tint2", "lxqt-panel", "x11vnc", "openbox", "xorg-x11-server-Xvfb"}
+	return [p for p in pkgs if p not in remove]
+
+
+def ubuntu26_adjustments(pkgs: list[str]) -> list[str]:
+	# Ubuntu 26.04: t64 transition complete, packages dropped the suffix.
 	rep = {
-		"tint2": "lxqt-panel"
+		"libqt6opengl6t64":        "libqt6opengl6",
+		"libqt6openglwidgets6t64": "libqt6openglwidgets6",
 	}
-	out = []
-	for p in pkgs:
-		out.append(rep.get(p, p))
-	return out
+	return [rep.get(p, p) for p in pkgs]
 
 
 def packages_to_be_installed(image: str, tag: str = "") -> str:
@@ -133,6 +137,9 @@ def packages_to_be_installed(image: str, tag: str = "") -> str:
 
 	if image == "almalinux" and tag.startswith("10"):
 		pkgs = almalinux10_adjustments(pkgs)
+
+	if image == "ubuntu" and tag.startswith("26"):
+		pkgs = ubuntu26_adjustments(pkgs)
 
 	# De-dupe but KEEP section order
 	pkgs = unique_preserve_order(pkgs)
