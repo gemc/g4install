@@ -114,6 +114,7 @@ def additional_preamble(image: str, tag: str = "") -> str:
 	family = map_family(image)
 	is_alma = "almalinux" in image.lower()
 	is_alma9 = is_alma and tag.startswith("9")
+	is_alma10 = is_alma and tag.startswith("10")
 	commands = "\n"
 	if family == "fedora":
 		if is_alma:
@@ -129,6 +130,11 @@ def additional_preamble(image: str, tag: str = "") -> str:
 				"# Install 3.11 from AppStream and make it the system python3.\n"
 				"RUN dnf install -y python3.11 python3.11-devel \\\n"
 				"    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \n\n"
+			)
+		if is_alma10:
+			commands += (
+				"# AlmaLinux 10: enable EPEL for openbox and other desktop packages.\n"
+				"RUN dnf install -y epel-release\n\n"
 			)
 
 	elif family == "debian":

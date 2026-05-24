@@ -6,8 +6,8 @@ from functions import map_family, is_valid_image, unique_preserve_order
 # Small debian adjustments are done in code below
 pkg_sections = {
 	"cxx_essentials": {
-		"fedora":    ["git", "make", "cmake", "gcc-c++", "gdb", "valgrind"],
-		"debian":    ["git", "make", "cmake", "g++", "gdb", "valgrind"],
+		"fedora":    ["git", "make", "cmake", "gcc-c++", "gdb", "valgrind", "libxcrypt-devel"],
+		"debian":    ["git", "make", "cmake", "g++", "gdb", "valgrind", "libxcrypt-dev"],
 		"archlinux": ["git", "make", "cmake", "gcc", "gdb", "valgrind"],
 	},
 	"expat":          {
@@ -106,10 +106,13 @@ def fedora_adjustments(pkgs: list[str]) -> list[str]:
 
 
 def almalinux10_adjustments(pkgs: list[str]) -> list[str]:
-	# AlmaLinux 10 (RHEL 10): VNC/desktop stack not available in standard repos;
-	# xrandr binary is in xorg-x11-server-utils, not the standalone xrandr package.
-	remove = {"tint2", "lxqt-panel", "x11vnc", "openbox", "xorg-x11-server-Xvfb"}
-	rep = {"xrandr": "xorg-x11-server-utils"}
+	# AlmaLinux 10 (RHEL 10):
+	# - tigervnc-server replaces x11vnc; its Xvnc binary is both X display and VNC server,
+	#   so xorg-x11-server-Xvfb is not needed separately.
+	# - openbox is available from EPEL 10 (enabled in additional_preamble).
+	# - tint2, lxqt-panel, xrandr: not available on RHEL 10.
+	remove = {"xorg-x11-server-Xvfb", "xrandr", "tint2", "lxqt-panel"}
+	rep    = {"x11vnc": "tigervnc-server"}
 	out = []
 	for p in pkgs:
 		if p in remove:
