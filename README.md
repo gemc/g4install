@@ -121,13 +121,13 @@ docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4instal
 
 | OS               | Container Registry                                           | arm64 | amd64 |
 | :--------------- | :----------------------------------------------------------- | :---: | :---: |
-| ubuntu 24.04     | `ghcr.io/gemc/g4install:11.4.1-ubuntu-24.04`                |   yes |   yes |
-| ubuntu 26.04     | `ghcr.io/gemc/g4install:11.4.1-ubuntu-26.04`                |   yes |   yes |
-| fedora 44        | `ghcr.io/gemc/g4install:11.4.1-fedora-44`                   |   yes |   yes |
-| almalinux 9.4    | `ghcr.io/gemc/g4install:11.4.1-almalinux-9.4`               |   yes |   yes |
-| almalinux 10     | `ghcr.io/gemc/g4install:11.4.1-almalinux-10`                |   yes |   yes |
-| debian 13        | `ghcr.io/gemc/g4install:11.4.1-debian-13`                   |   yes |   yes |
-| archlinux latest | `ghcr.io/gemc/g4install:11.4.1-archlinux-latest`            |    no |   yes |
+| ubuntu 24.04     | `ghcr.io/gemc/g4install:11.4.1-ubuntu-24.04                 ` |   yes |   yes |
+| ubuntu 26.04     | `ghcr.io/gemc/g4install:11.4.1-ubuntu-26.04                 ` |   yes |   yes |
+| fedora 44        | `ghcr.io/gemc/g4install:11.4.1-fedora-44                    ` |   yes |   yes |
+| almalinux 9.4    | `ghcr.io/gemc/g4install:11.4.1-almalinux-9.4                ` |   yes |   yes |
+| almalinux 10     | `ghcr.io/gemc/g4install:11.4.1-almalinux-10                 ` |   yes |   yes |
+| debian 13        | `ghcr.io/gemc/g4install:11.4.1-debian-13                    ` |   yes |   yes |
+| archlinux latest | `ghcr.io/gemc/g4install:11.4.1-archlinux-latest             ` |    no |   yes |
 
 <br/>
 

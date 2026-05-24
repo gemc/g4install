@@ -7,7 +7,7 @@ from functions import map_family, is_valid_image, unique_preserve_order
 pkg_sections = {
 	"cxx_essentials": {
 		"fedora":    ["git", "make", "cmake", "gcc-c++", "gdb", "valgrind", "libxcrypt-devel"],
-		"debian":    ["git", "make", "cmake", "g++", "gdb", "valgrind", "libxcrypt-dev"],
+		"debian":    ["git", "make", "cmake", "g++", "gdb", "valgrind", "libcrypt-dev"],
 		"archlinux": ["git", "make", "cmake", "gcc", "gdb", "valgrind"],
 	},
 	"expat":          {
@@ -106,19 +106,11 @@ def fedora_adjustments(pkgs: list[str]) -> list[str]:
 
 
 def almalinux10_adjustments(pkgs: list[str]) -> list[str]:
-	# AlmaLinux 10 (RHEL 10):
-	# - tigervnc-server replaces x11vnc; its Xvnc binary is both X display and VNC server,
-	#   so xorg-x11-server-Xvfb is not needed separately.
-	# - openbox is available from EPEL 10 (enabled in additional_preamble).
-	# - tint2, lxqt-panel, xrandr: not available on RHEL 10.
-	remove = {"xorg-x11-server-Xvfb", "xrandr", "tint2", "lxqt-panel"}
-	rep    = {"x11vnc": "tigervnc-server"}
-	out = []
-	for p in pkgs:
-		if p in remove:
-			continue
-		out.append(rep.get(p, p))
-	return out
+	# AlmaLinux 10 (RHEL 10): no VNC/desktop stack available.
+	# tigervnc-server, openbox, x11vnc, xorg-x11-server-Xvfb are absent from
+	# BaseOS, AppStream, CRB, and EPEL 10. AlmaLinux 10 images are headless only.
+	remove = {"x11vnc", "openbox", "tint2", "lxqt-panel", "xorg-x11-server-Xvfb", "xrandr"}
+	return [p for p in pkgs if p not in remove]
 
 
 def packages_to_be_installed(image: str, tag: str = "") -> str:
