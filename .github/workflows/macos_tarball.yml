@@ -1,0 +1,143 @@
+# Build a Geant4 binary tarball natively on macOS (Apple Silicon).
+#
+# macOS has no Docker base image and nothing to publish to GHCR, so unlike the
+# Linux deploy workflow this does NOT build/push an image. It compiles Geant4
+# exactly like the other OSes -- via install/install_geant4 and the module
+# system -- then reuses ci/package_install.sh to emit the same relocatable
+# tarball, and attaches it to the rolling "dev" prerelease.
+name: macOS Geant4 Binary Tarball
+
+run-name: macOS Geant4 binary tarball
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-geant4-tarball-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  # Run after the nightly dev release has anchored the "dev" tag/prerelease.
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  discover:
+    name: Resolve Geant4 versions
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.scan.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - id: scan
+        name: Build matrix
+        shell: bash
+        run: |
+          source ci/env.sh
+          # arm64-only: GitHub's standard macOS runners are Apple Silicon.
+          inc=""
+          for v in $(get_geant4_tags); do
+            inc="${inc:+$inc,}{\"geant4_tag\":\"${v}\",\"arch\":\"arm64\",\"runner\":\"macos-15\"}"
+          done
+          echo "matrix={\"include\":[${inc}]}" >> "$GITHUB_OUTPUT"
+
+  build-tarball:
+    name: geant4 ${{ matrix.geant4_tag }} macos ${{ matrix.arch }}
+    needs: discover
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    env:
+      TAG_NAME: dev
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install build dependencies (Homebrew)
+        shell: bash
+        run: |
+          # Qt6 + qmake6, CMake/Ninja, Environment Modules. Geant4 builds with
+          # the system clang. XQuartz provides the X11/OpenGL headers that
+          # install/install_geant4 requests (GEANT4_USE_OPENGL_X11).
+          brew update
+          brew install qt cmake ninja modules
+          brew install --cask xquartz
+
+      - name: Compile Geant4 and build the tarball
+        id: build
+        shell: zsh {0}
+        run: |
+          set -e
+
+          # Initialise Environment Modules. Export MODULESHOME so the install
+          # scripts' ensure_modules() finds the same init in their subshells.
+          export MODULESHOME="$(brew --prefix modules)"
+          source "${MODULESHOME}/init/zsh"
+
+          # Make this repo's modulefiles visible (exported so children inherit).
+          module use "${PWD}/modules"
+          export OSRELEASE="$(modules/util/osrelease.py)"
+          echo "OSRELEASE=${OSRELEASE}"
+
+          # Compile Geant4 the same way as the other OSes (builds CLHEP and
+          # Xerces-C as needed).
+          ./install/install_geant4 "${{ matrix.geant4_tag }}"
+
+          # Load the freshly built stack to populate G4INSTALL / CLHEP_BASE_DIR
+          # / XERCESCROOT for the packager. Versions are discovered from the
+          # install tree so prereqs load in order.
+          sim_home="${PWD}/${OSRELEASE}"
+          clhep_ver="$(ls "${sim_home}/clhep" | head -1)"
+          xercesc_ver="$(ls "${sim_home}/xercesc" | head -1)"
+          module load sim_system
+          module load "clhep/${clhep_ver}"
+          module load "xercesc/${xercesc_ver}"
+          module load "geant4/${{ matrix.geant4_tag }}"
+          eval "$(geant4-config --sh)"
+
+          package_name="geant4-${{ matrix.geant4_tag }}-${OSRELEASE}"
+          GEANT4_VERSION="${{ matrix.geant4_tag }}" \
+            ci/package_install.sh dist "${package_name}"
+
+          echo "package_name=${package_name}" >> "$GITHUB_OUTPUT"
+          echo "tarball=dist/${package_name}.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test the tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          tarball="${{ steps.build.outputs.tarball }}"
+          work="$(mktemp -d)"
+          tar -xzf "${tarball}" -C "${work}" --strip-components=1
+          # geant4-config does not need the downloaded physics data, so this is
+          # a light structural check. Run ./install_geant4_data.sh + source
+          # ./geant4.env for a full runtime test (downloads several GB).
+          test -x "${work}/install_geant4_data.sh"
+          test -f "${work}/geant4.env"
+          "${work}"/geant4/*/bin/geant4-config --version
+
+      - name: Upload tarball artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: geant4-tarball-${{ steps.build.outputs.package_name }}
+          path: ${{ steps.build.outputs.tarball }}
+          if-no-files-found: error
+
+      - name: Attach tarball to dev release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tarball="${{ steps.build.outputs.tarball }}"
+          gh release view "${TAG_NAME}" --repo "$REPO" >/dev/null 2>&1 || \
+            gh release create "${TAG_NAME}" \
+              --repo "$REPO" \
+              --title "Dev Nightly" \
+              --prerelease \
+              --notes "Geant4 binary tarballs (dev nightly)."
+          gh release upload "${TAG_NAME}" --repo "$REPO" "${tarball}" --clobber
