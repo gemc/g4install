@@ -120,7 +120,13 @@ jobs:
               print("RUN pacman -Sy --noconfirm archlinux-keyring")
           elif image == "almalinux":
               print("RUN dnf install -y 'dnf-command(config-manager)' \\")
-              print("    && dnf config-manager --set-enabled crb")
+              if tag.startswith("9"):
+                  # AlmaLinux 9: Qt6 needs CRB + the synergy repo (alma10 ships
+                  # qt6 in AppStream, so CRB alone is enough there).
+                  print("    && dnf config-manager --set-enabled crb \\")
+                  print("    && dnf install -y almalinux-release-synergy")
+              else:
+                  print("    && dnf config-manager --set-enabled crb")
 
           print(packages_install_command(image, tag))
           PY

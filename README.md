@@ -55,17 +55,17 @@ You can now list supported Geant4 versions:
 module avail geant4
 ```
 
-### 2. Install a Geant4 version (example: 11.4.1)
+### 2. Install a Geant4 version (example: 11.4.2)
 
 ```shell
 module load sim_system
-install_geant4 11.4.1
+install_geant4 11.4.2
 ```
 
 ### 3. Load a Geant4 version
 
 ```shell
-module load geant4/11.4.1
+module load geant4/11.4.2
 ```
 
 
@@ -79,7 +79,7 @@ One of the main features of `g4install` is the ability to keep multiple versions
 module load geant4/11.3.2
 # build/test project A
 
-module switch geant4/11.4.1
+module switch geant4/11.4.2
 # build/test project B
 ```
 
@@ -100,7 +100,7 @@ Images are built by CI and published to the
 ### Batch mode example
 
 ```shell
-docker run --rm -it ghcr.io/gemc/g4install:11.4.1-ubuntu=24.04 bash -li
+docker run --rm -it ghcr.io/gemc/g4install:11.4.2-ubuntu=24.04 bash -li
 ```
 
 ### GUI mode example (VNC / noVNC)
@@ -111,23 +111,23 @@ VNC_PASS=(-e X11VNC_PASSWORD=change-me)
 VNC_BIND=(-e VNC_BIND=0.0.0.0)
 GEO_FLAGS=(-e GEOMETRY=1920x1200)
 
-docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4install:11.4.1-ubuntu=24.04
+docker run --rm -it $VPORTS $VNC_BIND $VNC_PASS $GEO_FLAGS ghcr.io/gemc/g4install:11.4.2-ubuntu=24.04
 ```
 
 
 ## Supported Images
 
-### Geant4 11.4.1
+### Geant4 11.4.2
 
 | OS               | Container Registry                                           | arm64 | amd64 |
 | :--------------- | :----------------------------------------------------------- | :---: | :---: |
-| ubuntu 24.04     | `ghcr.io/gemc/g4install:11.4.1-ubuntu-24.04                 ` |   yes |   yes |
-| ubuntu 26.04     | `ghcr.io/gemc/g4install:11.4.1-ubuntu-26.04                 ` |   yes |   yes |
-| fedora 44        | `ghcr.io/gemc/g4install:11.4.1-fedora-44                    ` |   yes |   yes |
-| almalinux 9.4    | `ghcr.io/gemc/g4install:11.4.1-almalinux-9.4                ` |   yes |   yes |
-| almalinux 10     | `ghcr.io/gemc/g4install:11.4.1-almalinux-10                 ` |   yes |   yes |
-| debian 13        | `ghcr.io/gemc/g4install:11.4.1-debian-13                    ` |   yes |   yes |
-| archlinux latest | `ghcr.io/gemc/g4install:11.4.1-archlinux-latest             ` |    no |   yes |
+| ubuntu 24.04     | `ghcr.io/gemc/g4install:11.4.2-ubuntu-24.04                 ` |   yes |   yes |
+| ubuntu 26.04     | `ghcr.io/gemc/g4install:11.4.2-ubuntu-26.04                 ` |   yes |   yes |
+| fedora 44        | `ghcr.io/gemc/g4install:11.4.2-fedora-44                    ` |   yes |   yes |
+| almalinux 9.4    | `ghcr.io/gemc/g4install:11.4.2-almalinux-9.4                ` |   yes |   yes |
+| almalinux 10     | `ghcr.io/gemc/g4install:11.4.2-almalinux-10                 ` |   yes |   yes |
+| debian 13        | `ghcr.io/gemc/g4install:11.4.2-debian-13                    ` |   yes |   yes |
+| archlinux latest | `ghcr.io/gemc/g4install:11.4.2-archlinux-latest             ` |    no |   yes |
 
 <br/>
 
