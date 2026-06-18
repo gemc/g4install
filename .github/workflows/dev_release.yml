@@ -1,0 +1,55 @@
+# Nightly anchor for the rolling "dev" prerelease that hosts the Geant4 binary
+# tarballs. Moves the dev tag to the latest main commit and refreshes the
+# prerelease; the deploy + binary_tarballs workflows attach the actual tarballs.
+name: Nightly Dev Release
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # every day at 1:30 am UTC
+    - cron: '30 1 * * *'
+
+  # Allows running this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  dev-release:
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: dev
+      RELEASE_TITLE: Dev Nightly
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Move dev tag to current commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "${TAG_NAME}" "${GITHUB_SHA}"
+          git push --force origin "refs/tags/${TAG_NAME}"
+
+      - name: Create or refresh dev prerelease
+        shell: bash
+        run: |
+          notes="Geant4 binary tarballs (dev nightly) built from ${GITHUB_SHA}."
+          if gh release view "${TAG_NAME}" --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit "${TAG_NAME}" \
+              --repo "$REPO" \
+              --title "${RELEASE_TITLE}" \
+              --prerelease \
+              --target "${GITHUB_SHA}" \
+              --notes "${notes}"
+          else
+            gh release create "${TAG_NAME}" \
+              --repo "$REPO" \
+              --title "${RELEASE_TITLE}" \
+              --prerelease \
+              --target "${GITHUB_SHA}" \
+              --notes "${notes}"
+          fi

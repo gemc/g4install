@@ -3,7 +3,7 @@ from functions import map_family, is_valid_image, \
 	local_entrypoint, remote_entrypoint, \
 	local_entrypoint_addon, remote_entrypoint_addon, \
 	remote_novnc_startup_script, local_novnc_startup_script, remote_startup_dir, \
-	local_bashrc, remote_bashrc, local_inputrc, remote_inputrc
+	local_bashrc, remote_bashrc, local_inputrc, remote_inputrc, sim_home
 from packages import packages_install_command
 from additional_libraries import install_additional_libraries
 
@@ -78,7 +78,7 @@ def copy_setup_file(image: str) -> str:
 
 
 def docker_header(image: str, tag: str) -> str:
-	commands = f"FROM {image}:{tag}\n"
+	commands = f"FROM {image}:{tag} AS final\n"
 	commands += f"LABEL maintainer=\"Maurizio Ungaro <ungaro@jlab.org>\"\n\n"
 	commands += f"# run bash instead of sh\n"
 	commands += f"SHELL [\"/bin/bash\", \"-c\"]\n\n"
@@ -155,9 +155,34 @@ def post_package_setup(image: str, tag: str = "") -> str:
 	return ""
 
 
+def package_build_stage(image: str, tag: str, geant4_version: str, package_arch: str) -> str:
+	"""Stage that turns the installed Geant4/CLHEP/Xerces-C trees into a
+	relocatable binary tarball under /dist."""
+	g4install = sim_home(True)
+	package_name = f'geant4-{geant4_version}-{image}-{tag}-{package_arch}'
+	commands = "\n# Geant4 binary tarball build\n"
+	commands += "FROM final AS package-build\n"
+	commands += f"RUN DOCKER_ENTRYPOINT_SOURCE_ONLY=1 . {remote_entrypoint()} \\\n"
+	commands += f"    && module load geant4/{geant4_version} \\\n"
+	commands += '    && eval "$(geant4-config --sh)" \\\n'
+	commands += f"    && GEANT4_VERSION={geant4_version} \\\n"
+	commands += f'       {g4install}/ci/package_install.sh /dist "{package_name}"\n'
+	return commands
+
+
+def package_export_stage() -> str:
+	"""Empty stage whose only content is the tarball, for `outputs: type=local`."""
+	commands = "\n# Geant4 binary tarball exporter\n"
+	commands += "FROM scratch AS package-export\n"
+	commands += "COPY --from=package-build /dist / \n"
+	return commands
+
+
 def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: str,
                       meson_version: str,
-                      novnc_version: str) -> str:
+                      novnc_version: str,
+                      with_package: bool = False,
+                      package_arch: str = "amd64") -> str:
 	commands = ""
 	commands += docker_header(image, tag)
 	commands += copy_setup_file(image)
@@ -176,6 +201,10 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
 	commands += f'RUN chmod 0755 {remote_entrypoint()} \n'
 	commands += f'RUN chmod 0755 {remote_entrypoint_addon()} \n'
 	commands += f'RUN chmod 0755 {remote_novnc_startup_script()} \n'
+
+	if with_package:
+		commands += package_build_stage(image, tag, geant4_version, package_arch)
+		commands += package_export_stage()
 
 	return commands
 
@@ -219,6 +248,14 @@ def main():
 		"--geant4-version", default="11.4.0",
 		help="Version of Geant4 to install (default: %(default)s)"
 	)
+	parser.add_argument(
+		"--with-package", action="store_true",
+		help="Append package-build/package-export stages that emit a Geant4 binary tarball"
+	)
+	parser.add_argument(
+		"--package-arch", choices=["amd64", "arm64"], default="amd64",
+		help="Architecture suffix used in the tarball name (default: %(default)s)"
+	)
 
 	args = parser.parse_args()
 
@@ -236,6 +273,8 @@ def main():
 		args.root_version,
 		args.meson_version,
 		args.novnc_version,
+		args.with_package,
+		args.package_arch,
 	)
 	print(dockerfile)
 

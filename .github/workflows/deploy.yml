@@ -1,5 +1,5 @@
 # Build & Publish GitHub Container Registry (GHCR) Images
-name: Build Geant4 Images
+name: Deploy Geant4 Images
 permissions:
   contents: read
   packages: write
@@ -99,6 +99,7 @@ jobs:
 
     env:
       CACHE_REF: type=registry,ref=${{ needs.discover.outputs.image }}:cache-${{ matrix.arch }}
+      TARBALL_NAME: ${{ format('{0}-{1}-{2}-{3}', matrix.geant4_tag, matrix.image, matrix.image_tag, matrix.arch) }}
 
     steps:
       - name: Checkout repository
@@ -134,6 +135,8 @@ jobs:
           --meson-version "${{ matrix.meson_tag }}" \
           --novnc-version "${{ matrix.novnc_tag  }}" \
           --geant4-version "${{ matrix.geant4_tag }}" \
+          --with-package \
+          --package-arch "${{ matrix.arch }}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
@@ -155,6 +158,8 @@ jobs:
             UPSTREAM_REV=${{ env.UPSTREAM_REV }}
           context: .
           file: ./Dockerfile.generated
+          # publish only the image stage; the package-* stages are exported below
+          target: final
           platforms: ${{ matrix.platform }}
           push: true
           # Add suffix to the arch-specific image tag
@@ -164,6 +169,28 @@ jobs:
           # cache-from: ${{ env.CACHE_REF }}
           # publishes the BuildKit cache to your container registry under that tag
           cache-to:   ${{ env.CACHE_REF }},mode=max
+
+      # Reuse the just-built layers (via the BuildKit cache) to assemble the
+      # Geant4 binary tarball and export it to the runner filesystem.
+      - name: Export Geant4 tarball (runner artifact)
+        uses: docker/build-push-action@v7
+        with:
+          pull: true
+          build-args: |
+            UPSTREAM_REV=${{ env.UPSTREAM_REV }}
+          context: .
+          file: ./Dockerfile.generated
+          target: package-export
+          push: false
+          cache-from: ${{ env.CACHE_REF }}
+          outputs: type=local,dest=${{ runner.temp }}/artifacts/package-${{ env.TARBALL_NAME }}
+
+      - name: Upload Geant4 tarball artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: geant4-tarball-${{ env.TARBALL_NAME }}
+          path: ${{ runner.temp }}/artifacts/package-${{ env.TARBALL_NAME }}/*.tar.gz
+          if-no-files-found: error
 
 
   # Manifest stitch

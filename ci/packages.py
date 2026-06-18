@@ -22,7 +22,7 @@ pkg_sections = {
 	},
 	"sql":            {
 		"fedora":    ["mariadb-devel", "sqlite-devel"],
-		"debian":    ["libmysqlclient-dev", "libsqlite3-dev"],
+		"debian":    ["libmariadb-dev", "libsqlite3-dev"],
 		"archlinux": ["mariadb", "mariadb-libs", "sqlite"],
 	},
 	"python_ninja":   {
@@ -83,10 +83,11 @@ pkg_sections = {
 
 
 def debian_adjustments(pkgs: list[str]) -> list[str]:
-	# Debian ships libqt6opengl6-dev instead of libqt6opengl6 (Ubuntu name)
+	# Debian ships libqt6opengl6-dev instead of libqt6opengl6 (Ubuntu name).
+	# MariaDB is used for the whole debian family via the sql section, so no
+	# libmysqlclient-dev rewrite is needed here.
 	rep = {
 		"libqt6opengl6":      "libqt6opengl6-dev",
-		"libmysqlclient-dev": "libmariadb-dev"
 	}
 	out = []
 	for p in pkgs:
