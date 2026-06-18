@@ -70,8 +70,11 @@ pkg_sections = {
 		"archlinux": ["qt6-base", "qt6-svg"],
 	},
 	"root":           {
+		# fedora/arch install ROOT from their package manager (deps resolved
+		# automatically). The debian family builds ROOT from source, so it needs
+		# ROOT's compression build deps: LZ4, LibLZMA and ZSTD.
 		"fedora":    ["root"],
-		"debian":    [],
+		"debian":    ["liblz4-dev", "liblzma-dev", "libzstd-dev"],
 		"archlinux": ["root"],
 	},
 	"sanitizers":     {
