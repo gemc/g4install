@@ -37,9 +37,10 @@ jobs:
         run: |
           source ci/env.sh
           # arm64-only: GitHub's standard macOS runners are Apple Silicon.
+          # macos-26 (Tahoe) matches the macosx26 OSRELEASE produced locally.
           inc=""
           for v in $(get_geant4_tags); do
-            inc="${inc:+$inc,}{\"geant4_tag\":\"${v}\",\"arch\":\"arm64\",\"runner\":\"macos-15\"}"
+            inc="${inc:+$inc,}{\"geant4_tag\":\"${v}\",\"arch\":\"arm64\",\"runner\":\"macos-26\"}"
           done
           echo "matrix={\"include\":[${inc}]}" >> "$GITHUB_OUTPUT"
 
@@ -58,13 +59,19 @@ jobs:
 
       - name: Install build dependencies (Homebrew)
         shell: bash
+        env:
+          # GitHub macOS runners pre-tap aws/azure/hashicorp; newer Homebrew
+          # refuses untrusted taps and aborts. We use none of those taps, so
+          # skip the trust check and the auto-update tap scan instead of
+          # tapping/untapping a list that changes per runner image.
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
+          HOMEBREW_NO_AUTO_UPDATE: "1"
         run: |
           # Qt6 + qmake6, CMake/Ninja, Environment Modules. Geant4 builds with
           # the system clang. XQuartz provides the X11/OpenGL headers that
           # install/install_geant4 requests (GEANT4_USE_OPENGL_X11); it is also
           # a runtime requirement of the resulting tarball -- see
           # ci/binary_packages.py.
-          brew update
           brew install qt cmake ninja modules
           brew install --cask xquartz
 
