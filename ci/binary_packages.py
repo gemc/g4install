@@ -8,7 +8,13 @@
 # Geant4 data. The list mirrors the runtime set used by ../src.
 import argparse
 
-valid_images = ["fedora", "ubuntu", "archlinux", "almalinux", "debian"]
+# Single source of truth for the *minimal requirements to install and run the
+# Geant4 binary tarball* on each supported OS. The tarball bundles Geant4, CLHEP
+# and Xerces-C already built, so these lists contain only the runtime shared
+# libraries Geant4 links against, plus curl/tar to fetch and unpack the archive
+# and the Geant4 data. These lists feed both the CI tarball test and the install
+# documentation. Keep them in sync with the docs when they change.
+valid_images = ["fedora", "ubuntu", "archlinux", "almalinux", "debian", "macos"]
 
 
 def map_family(image: str) -> str:
@@ -57,10 +63,24 @@ pkg_sections = {
 	},
 }
 
+# macOS (Homebrew) runtime requirements. Geant4 is built against Qt6 and the
+# X11 OpenGL / RayTracer viewers, so a user needs Qt and XQuartz to run the
+# GUI and visualization. CLHEP, Xerces-C and the Geant4 libraries are bundled
+# in the tarball; curl/tar ship with macOS. XQuartz is a cask, not a formula.
+macos_requirements = {
+	"formulae": ["qt"],
+	"casks": ["xquartz"],
+}
+
 
 def packages_to_be_installed(image: str, tag: str = "") -> str:
 	if image not in valid_images:
 		raise SystemExit(f"invalid image '{image}'; valid images: {', '.join(sorted(valid_images))}")
+
+	if image == "macos":
+		packages = list(macos_requirements["formulae"])
+		packages += [f"--cask {c}" for c in macos_requirements["casks"]]
+		return " ".join(packages)
 
 	family = map_family(image)
 	packages = []
@@ -71,6 +91,13 @@ def packages_to_be_installed(image: str, tag: str = "") -> str:
 
 
 def packages_install_command(image: str, tag: str = "") -> str:
+	if image == "macos":
+		cmds = []
+		if macos_requirements["formulae"]:
+			cmds.append("brew install " + " ".join(macos_requirements["formulae"]))
+		cmds += [f"brew install --cask {c}" for c in macos_requirements["casks"]]
+		return " && ".join(cmds)
+
 	family = map_family(image)
 	packages = packages_to_be_installed(image, tag)
 	log = "/tmp/geant4-binary-packages-install.log"

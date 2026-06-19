@@ -61,7 +61,9 @@ jobs:
         run: |
           # Qt6 + qmake6, CMake/Ninja, Environment Modules. Geant4 builds with
           # the system clang. XQuartz provides the X11/OpenGL headers that
-          # install/install_geant4 requests (GEANT4_USE_OPENGL_X11).
+          # install/install_geant4 requests (GEANT4_USE_OPENGL_X11); it is also
+          # a runtime requirement of the resulting tarball -- see
+          # ci/binary_packages.py.
           brew update
           brew install qt cmake ninja modules
           brew install --cask xquartz
