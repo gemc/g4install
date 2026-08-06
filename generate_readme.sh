@@ -3,291 +3,465 @@ set -euo pipefail
 
 source "ci/env.sh"
 
-# helper to build one image tag suffix from os+ver
 image_suffix_for() {
     local os="$1"
-    local ver="$2"
+    local version="$2"
+
+    printf '%s-%s' "$os" "$version"
+}
+
+pretty_os_label() {
+    local os="$1"
+    local version="$2"
 
     case "$os" in
-        ubuntu)
-            # ubuntu24
-            printf '%s-%s' "$os" "$ver"
-            ;;
-        fedora|almalinux)
-            # fedora-42 , almalinux-9.4
-            printf '%s-%s' "$os" "$ver"
-            ;;
-        debian)
-            # debian-13
-            printf '%s-%s' "$os" "$ver"
-            ;;
-        archlinux)
-            # archlinux-latest
-            printf '%s-%s' "$os" "$ver"
-            ;;
-        *)
-            printf '%s%s' "$os" "$ver"
-            ;;
+        ubuntu) printf 'Ubuntu %s' "$version" ;;
+        fedora) printf 'Fedora %s' "$version" ;;
+        almalinux) printf 'AlmaLinux %s' "$version" ;;
+        debian) printf 'Debian %s' "$version" ;;
+        archlinux) printf 'Arch Linux %s' "$version" ;;
+        *) printf '%s %s' "$os" "$version" ;;
     esac
 }
 
-# arch matrix helper
 arch_support() {
     local os="$1"
-    local which="$2"  # "arm64" or "amd64"
+    local architecture="$2"
 
-    if [ "$os" = "archlinux" ] && [ "$which" = "arm64" ]; then
+    if [[ "$os" == "archlinux" && "$architecture" == "arm64" ]]; then
         printf 'no'
     else
         printf 'yes'
     fi
 }
 
-# pretty OS label for README tables
-pretty_os_label() {
+image_mode() {
     local os="$1"
-    local ver="$2"
+    local version="$2"
 
-    case "$os" in
-        ubuntu)
-            printf 'ubuntu %s' "$ver"
-            ;;
-        fedora)
-            printf 'fedora %s' "$ver"
-            ;;
-        almalinux)
-            printf 'almalinux %s' "$ver"
-            ;;
-        debian)
-            printf 'debian %s' "$ver"
-            ;;
-        archlinux)
-            printf 'archlinux %s' "$ver"
-            ;;
-        *)
-            printf '%s %s' "$os" "$ver"
-            ;;
-    esac
+    if [[ "$os" == "almalinux" && "$version" == 10* ]]; then
+        printf 'batch'
+    else
+        printf 'batch + noVNC'
+    fi
 }
 
-# prints one markdown table for a Geant4 tag
-print_table() {
-    local g4tag="$1"
+print_image_table() {
+    local geant4_version="$1"
 
     cat <<'EOF'
-| OS               | Container Registry                                           | arm64 | amd64 |
-| :--------------- | :----------------------------------------------------------- | :---: | :---: |
+| Base image | Registry tag | Modes | `amd64` | `arm64` |
+| --- | --- | --- | :---: | :---: |
 EOF
 
-    for osv in "${OS_VERSIONS[@]}"; do
-        local os="${osv%%=*}"
-        local ver="${osv#*=}"
-
-        local pretty_os
-        pretty_os="$(pretty_os_label "$os" "$ver")"
-
-        local suffix
-        suffix="$(image_suffix_for "$os" "$ver")"
-
-        local pull_cmd="ghcr.io/gemc/g4install:${g4tag}-${suffix}"
-        local arm64
-        arm64="$(arch_support "$os" arm64)"
-        local amd64
+    local os_version os version label suffix mode amd64 arm64
+    for os_version in "${OS_VERSIONS[@]}"; do
+        os="${os_version%%=*}"
+        version="${os_version#*=}"
+        label="$(pretty_os_label "$os" "$version")"
+        suffix="$(image_suffix_for "$os" "$version")"
+        mode="$(image_mode "$os" "$version")"
         amd64="$(arch_support "$os" amd64)"
+        arm64="$(arch_support "$os" arm64)"
 
-        printf '| %-16s | `%-59s` | %5s | %5s |\n' \
-            "$pretty_os" \
-            "$pull_cmd" \
-            "$arm64" \
-            "$amd64"
+        printf '| %s | `ghcr.io/gemc/g4install:%s-%s` | %s | %s | %s |\n' \
+            "$label" "$geant4_version" "$suffix" "$mode" "$amd64" "$arm64"
+    done
+}
+
+print_binary_packages() {
+    local image="$1"
+    local version="$2"
+    local prefix="$3"
+    local packages
+    local -a package_array
+
+    packages="$(python3 ci/binary_packages.py --image "$image" --tag "$version")"
+    read -r -a package_array <<< "$packages"
+
+    printf '%s' "$prefix"
+    local index
+    for index in "${!package_array[@]}"; do
+        if (( index % 5 == 0 )); then
+            printf ' \\\n  '
+        else
+            printf ' '
+        fi
+        printf '%s' "${package_array[$index]}"
+    done
+    printf '\n'
+}
+
+print_binary_prerequisites() {
+    cat <<'EOF'
+<details>
+<summary>Fedora 44 and AlmaLinux 9.4/10</summary>
+
+```shell
+EOF
+    print_binary_packages fedora 44 "sudo dnf install -y --allowerasing"
+    cat <<'EOF'
+```
+
+</details>
+
+<details>
+<summary>Ubuntu 24.04/26.04</summary>
+
+```shell
+sudo apt-get update
+EOF
+    print_binary_packages ubuntu 24.04 \
+        "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata"
+    cat <<'EOF'
+```
+
+</details>
+
+<details>
+<summary>Debian 13</summary>
+
+```shell
+sudo apt-get update
+EOF
+    print_binary_packages debian 13 \
+        "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata"
+    cat <<'EOF'
+```
+
+</details>
+
+<details>
+<summary>Arch Linux</summary>
+
+```shell
+sudo pacman-key --init && sudo pacman-key --populate
+sudo pacman -Sy --noconfirm archlinux-keyring
+EOF
+    print_binary_packages archlinux latest "sudo pacman -Syu --noconfirm --needed"
+    cat <<'EOF'
+```
+
+</details>
+
+<details>
+<summary>macOS (Apple Silicon)</summary>
+
+```shell
+brew install qt
+brew install --cask xquartz
+```
+
+</details>
+EOF
+}
+
+print_source_prerequisites() {
+    cat <<'EOF'
+<details>
+<summary>Fedora 44</summary>
+
+```shell
+sudo dnf install -y git make cmake gcc-c++ zsh environment-modules \
+  expat-devel zlib-devel qt6-qtbase-devel \
+  mesa-libGL-devel mesa-libGLU-devel libX11-devel libXpm-devel libXft-devel \
+  libXt-devel libXmu-devel libXrender-devel
+```
+
+</details>
+
+<details>
+<summary>AlmaLinux 9.4</summary>
+
+```shell
+sudo dnf install -y 'dnf-command(config-manager)'
+sudo dnf config-manager --set-enabled crb
+sudo dnf install -y almalinux-release-synergy
+sudo dnf install -y git make cmake gcc-c++ zsh environment-modules \
+  expat-devel zlib-devel qt6-qtbase-devel \
+  mesa-libGL-devel mesa-libGLU-devel libX11-devel libXpm-devel libXft-devel \
+  libXt-devel libXmu-devel libXrender-devel
+```
+
+</details>
+
+<details>
+<summary>AlmaLinux 10</summary>
+
+```shell
+sudo dnf install -y 'dnf-command(config-manager)'
+sudo dnf config-manager --set-enabled crb
+sudo dnf install -y git make cmake gcc-c++ zsh environment-modules \
+  expat-devel zlib-devel qt6-qtbase-devel \
+  mesa-libGL-devel mesa-libGLU-devel libX11-devel libXpm-devel libXft-devel \
+  libXt-devel libXmu-devel libXrender-devel
+```
+
+</details>
+
+<details>
+<summary>Ubuntu 24.04/26.04</summary>
+
+```shell
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  git make cmake g++ zsh environment-modules libexpat1-dev zlib1g-dev \
+  qt6-base-dev libqt6opengl6 libqt6openglwidgets6 qt6-base-dev-tools \
+  libgl1-mesa-dev libglu1-mesa-dev libx11-dev libxpm-dev libxft-dev \
+  libxt-dev libxmu-dev libxrender-dev
+```
+
+</details>
+
+<details>
+<summary>Debian 13</summary>
+
+```shell
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  git make cmake g++ zsh environment-modules libexpat1-dev zlib1g-dev \
+  qt6-base-dev libqt6opengl6-dev libqt6openglwidgets6 qt6-base-dev-tools \
+  libgl1-mesa-dev libglu1-mesa-dev libx11-dev libxpm-dev libxft-dev \
+  libxt-dev libxmu-dev libxrender-dev
+```
+
+</details>
+
+<details>
+<summary>macOS 26 (Apple Silicon)</summary>
+
+Install the Xcode Command Line Tools first, then install the remaining dependencies with Homebrew:
+
+```shell
+xcode-select --install
+brew install qt cmake modules
+brew install --cask xquartz
+export MODULESHOME="$(brew --prefix modules)"
+source "$MODULESHOME/init/zsh"
+```
+
+</details>
+EOF
+}
+
+render_template() {
+    local geant4_version="$1"
+    local image_suffix="$2"
+    local line
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line//@GEANT4_VERSION@/$geant4_version}"
+        line="${line//@IMAGE_SUFFIX@/$image_suffix}"
+        printf '%s\n' "$line"
     done
 }
 
 generate_readme() {
-    local g4tags latest_g4tag
-    g4tags="$(get_geant4_tags)"
-    latest_g4tag="${g4tags%% *}"
-    local ostags="$OS_VERSIONS"
-    local firstos="${ostags%% *}"
+    local geant4_versions latest_geant4_version first_os_version first_os first_version first_suffix
+    geant4_versions="$(get_geant4_tags)"
+    latest_geant4_version="${geant4_versions%% *}"
+    first_os_version="${OS_VERSIONS[0]}"
+    first_os="${first_os_version%%=*}"
+    first_version="${first_os_version#*=}"
+    first_suffix="$(image_suffix_for "$first_os" "$first_version")"
 
     {
-        cat <<EOF
+        cat <<'EOF' | render_template "$latest_geant4_version" "$first_suffix"
 # g4install
 
-Environment modules, installation scripts and [container images](https://github.com/gemc/g4install/pkgs/container/g4install)
-for **Geant4** — with **seamless coexistence of multiple Geant4 versions**.
+[![Deploy images][deploy-badge]][deploy]
+[![Linux tarballs][binary-tarballs-badge]][binary-tarballs]
+[![macOS tarball][macos-tarball-badge]][macos-tarball]
+[![Nightly release][nightly-badge]][nightly]
+[![Registry cleanup][cleanup-badge]][cleanup]
 
-This repository provides:
+`g4install` builds and manages [Geant4][geant4] with versioned [Environment Modules][modules]. It supports
+side-by-side Geant4 installations, relocatable binary tarballs, and multi-architecture container images.
 
-- **Environment Modules** + **installation scripts** for [Geant4](https://github.com/Geant4/geant4.git)
-- **Multi-architecture Docker images** (\`amd64\`, \`arm64\`)
+## Highlights
 
-<br/>
+- Install and switch between Geant4 versions without changing global system paths.
+- Build matched CLHEP and Xerces-C dependencies automatically.
+- Use the same module layout on Linux and macOS.
+- Pull CI-built Linux images for `amd64` and `arm64`.
+- Download relocatable Linux and Apple Silicon tarballs from the rolling development release.
 
-## Why use g4install?
+## Installation from source
 
-g4install is designed to let you:
+Building locally requires a C++ compiler, CMake, Git, Z shell, Environment Modules, Qt 6, X11/OpenGL headers,
+expat, and zlib. Copy-and-paste commands for each tested platform are in the
+[source-build prerequisites](#source-build-prerequisites) appendix.
 
-- Install **multiple Geant4 versions side-by-side**
-- Switch between versions quickly using \`module load\` / \`module switch\`
-- Automatically install and load required dependencies (CLHEP, Xerces-C)
-- Use an easy, consistent, shell independent environment
+### 1. Install the prerequisites
 
-This is especially useful:
+Run the command for your operating system from the appendix, then start a new login shell so that the
+`module` command is initialized.
 
-- one reliable command to install the latest or past Geant4 versions and its dependencies
-- validating applications against different Geant4 releases (e.g. \`11.3.x\` vs \`11.4.x\`)
+### 2. Clone and register the modulefiles
 
-<br/>
+The commands below install the repository in `$HOME/g4install`. Choose another absolute path if preferred.
 
-## Installation
-
-### Prerequisites
-
-Install **Environment Modules**:
-
-- **Linux**: install \`environment-modules\` using your package manager
-- **macOS**: \`brew install modules\`
-
-### 1. Clone and enable g4install modules
-
-Here we use \`/path/to/g4install\` as an example.
-
-\`\`\`shell
-git clone https://github.com/gemc/g4install
-module use /path/to/g4install
-\`\`\`
-
-We recommend adding the \`module use\` command to your
-shell init script, like \`.bashrc\` or \`.cshrc\`.
-
-
-You can now list supported Geant4 versions:
-
-
-\`\`\`shell
+```shell
+git clone https://github.com/gemc/g4install.git "$HOME/g4install"
+module use "$HOME/g4install/modules"
 module avail geant4
-\`\`\`
+```
 
-### 2. Install a Geant4 version (example: ${latest_g4tag})
+Add the `module use` line to `.bashrc` or `.zshrc` to make the modulefiles available in future shells.
 
-\`\`\`shell
+### 3. Build Geant4 @GEANT4_VERSION@
+
+```shell
 module load sim_system
-install_geant4 ${latest_g4tag}
-\`\`\`
+install_geant4 @GEANT4_VERSION@
+```
 
-### 3. Load a Geant4 version
+The installer builds CLHEP and Xerces-C when needed, downloads the Geant4 datasets, and installs everything
+under `$HOME/g4install/<platform>/`. The build can take a while and requires several gigabytes of disk space.
 
-\`\`\`shell
-module load geant4/${latest_g4tag}
-\`\`\`
+### 4. Load and verify the installation
 
+```shell
+module load geant4/@GEANT4_VERSION@
+geant4-config --version
+command -v geant4-config
+```
 
-<br/>
+## Switching Geant4 versions
 
-## Seamless Multi-Version Switching
+Installed versions coexist in separate directories. Use an explicit old and new module name when switching:
 
-One of the main features of \`g4install\` is the ability to keep multiple versions installed and switch between them without conflicts.
-
-\`\`\`shell
+```shell
 module load geant4/11.3.2
-# build/test project A
+# Build or test against Geant4 11.3.2.
 
-module switch geant4/${latest_g4tag}
-# build/test project B
-\`\`\`
+module switch geant4/11.3.2 geant4/@GEANT4_VERSION@
+# Build or test against Geant4 @GEANT4_VERSION@.
+```
 
+## Binary tarballs
 
-<br/>
+CI publishes relocatable tarballs to the rolling [development release][dev-release]. Choose the archive matching
+your OS and CPU architecture, extract it into an empty directory, install the Geant4 datasets, and source the
+generated environment file:
 
-## Docker Images
+```shell
+mkdir -p "$HOME/geant4-@GEANT4_VERSION@"
+tar -xzf geant4-@GEANT4_VERSION@-ubuntu-24.04-amd64.tar.gz \
+  -C "$HOME/geant4-@GEANT4_VERSION@" --strip-components=1
+cd "$HOME/geant4-@GEANT4_VERSION@"
+./install_geant4_data.sh
+source ./geant4.env
+geant4-config --version
+```
 
-Images are built by CI and published to the
-[G4Install GitHub Container Registry](https://github.com/gemc/g4install/pkgs/container/g4install).
+Install the small set of shared-library dependencies from the
+[binary-tarball prerequisites](#binary-tarball-prerequisites) appendix before using a tarball. Dataset
+installation downloads several gigabytes; set `GEANT4_DATA_BASE_URL` only when using an approved mirror.
 
-### Highlights
+## Container images
 
-* **Multi-arch tags** (same tag works on Intel and Apple Silicon)
-* **Batch mode** and **GUI mode** (VNC / noVNC)
-* Includes **Geant4** and **ROOT**
+Images include Geant4 and ROOT and are published in the [GitHub Container Registry][registry]. All listed tags
+support batch operation. AlmaLinux 10 is headless; the other images also provide VNC/noVNC visualization.
 
-### Batch mode example
+Run an interactive login shell:
 
-\`\`\`shell
-docker run --rm -it ghcr.io/gemc/g4install:${latest_g4tag}-${firstos} bash -li
-\`\`\`
+```shell
+docker run --rm -it ghcr.io/gemc/g4install:@GEANT4_VERSION@-@IMAGE_SUFFIX@ bash -li
+```
 
-### GUI mode example (VNC / noVNC)
+Start the default noVNC desktop, then open <http://localhost:6080>:
 
-\`\`\`shell
-VPORTS=(-p 6080:6080 -p 5900:5900)
-VNC_PASS=(-e X11VNC_PASSWORD=change-me)
-VNC_BIND=(-e VNC_BIND=0.0.0.0)
-GEO_FLAGS=(-e GEOMETRY=1920x1200)
+```shell
+docker run --rm -it \
+  -p 6080:6080 -p 5900:5900 \
+  -e X11VNC_PASSWORD=change-me \
+  -e VNC_BIND=0.0.0.0 \
+  -e GEOMETRY=1920x1200 \
+  ghcr.io/gemc/g4install:@GEANT4_VERSION@-@IMAGE_SUFFIX@
+```
 
-docker run --rm -it \$VPORTS \$VNC_BIND \$VNC_PASS \$GEO_FLAGS ghcr.io/gemc/g4install:${latest_g4tag}-${firstos}
-\`\`\`
+> [!NOTE]
+> Change the VNC password before exposing either port beyond your local machine.
 
-
-## Supported Images
+### Supported images
 
 EOF
 
-        for g4tag in $g4tags; do
-            printf '### Geant4 %s\n\n' "$g4tag"
-            print_table "$g4tag"
+        local geant4_version
+        for geant4_version in $geant4_versions; do
+            printf '#### Geant4 %s\n\n' "$geant4_version"
+            print_image_table "$geant4_version"
             printf '\n'
         done
 
         cat <<'EOF'
-<br/>
-
-
-<br/>
-
-
 ## Troubleshooting
 
 ### `module: command not found`
 
-Environment Modules is not installed or not initialized in the current shell.
-
-* Install `environment-modules` (Linux) or `modules` (macOS/Homebrew)
-* Start a login shell or source your shell initialization files
+Start a new login shell after installing Environment Modules. If the command is still unavailable, initialize
+the package explicitly using the path supplied by your distribution or Homebrew.
 
 ### `module avail geant4` shows nothing
 
-Confirm the repository is added to the module search path:
+Register the repository's `modules` directory, not the repository root:
 
-\`\`\`shell
-module use /path/to/g4install
-\`\`\`
+```shell
+module use "$HOME/g4install/modules"
+module avail geant4
+```
 
-### The wrong Geant4 version is being picked up
+### The wrong Geant4 version is active
 
-Check current shell state:
+Reset the module environment and load the desired version:
 
-\`\`\`shell
-module list
-which geant4-config
-geant4-config --version
-\`\`\`
-
-
-Reset env needed:
-
-\`\`\`shell
+```shell
 module purge
-module use /path/to/g4install
-module load geant4/<desired-version>
-\`\`\`
+module use "$HOME/g4install/modules"
+module load geant4/<version>
+module list
+geant4-config --version
+```
 
+## Appendix: prerequisites
 
-## CI Status
+The source-build lists match the libraries enabled by `install_geant4`. The binary lists are generated from
+`ci/binary_packages.py`, the runtime-package source of truth used by CI. Run package-manager commands with an
+account that has administrative privileges.
 
-[![Build Geant4 Images](https://github.com/gemc/g4install/actions/workflows/docker.yml/badge.svg)](https://github.com/gemc/g4install/actions/workflows/docker.yml)
+### Source-build prerequisites
+
 EOF
-} > README.md
+
+        print_source_prerequisites
+
+        cat <<'EOF'
+
+### Binary-tarball prerequisites
+
+EOF
+
+        print_binary_prerequisites
+
+        cat <<'EOF'
+
+[binary-tarballs]: https://github.com/gemc/g4install/actions/workflows/binary_tarballs.yml
+[binary-tarballs-badge]: https://github.com/gemc/g4install/actions/workflows/binary_tarballs.yml/badge.svg
+[cleanup]: https://github.com/gemc/g4install/actions/workflows/cleanup.yml
+[cleanup-badge]: https://github.com/gemc/g4install/actions/workflows/cleanup.yml/badge.svg
+[deploy]: https://github.com/gemc/g4install/actions/workflows/deploy.yml
+[deploy-badge]: https://github.com/gemc/g4install/actions/workflows/deploy.yml/badge.svg
+[dev-release]: https://github.com/gemc/g4install/releases/tag/dev
+[geant4]: https://geant4.web.cern.ch
+[macos-tarball]: https://github.com/gemc/g4install/actions/workflows/macos_tarball.yml
+[macos-tarball-badge]: https://github.com/gemc/g4install/actions/workflows/macos_tarball.yml/badge.svg
+[modules]: https://modules.readthedocs.io
+[nightly]: https://github.com/gemc/g4install/actions/workflows/dev_release.yml
+[nightly-badge]: https://github.com/gemc/g4install/actions/workflows/dev_release.yml/badge.svg
+[registry]: https://github.com/gemc/g4install/pkgs/container/g4install
+EOF
+    } > README.md
 }
 
 generate_readme
