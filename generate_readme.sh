@@ -327,6 +327,17 @@ geant4-config --version
 command -v geant4-config
 ```
 
+## Compile a Geant4 example
+
+With the Geant4 module loaded, compile the bundled B5 example in a separate build directory:
+
+```shell
+mkdir build_B5
+cd build_B5
+cmake $G4INSTALL/data/Geant4/examples/basic/B5
+make -j4
+```
+
 ## Switching Geant4 versions
 
 Installed versions coexist in separate directories. Use an explicit old and new module name when switching:
