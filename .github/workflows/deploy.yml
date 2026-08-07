@@ -99,6 +99,7 @@ jobs:
 
     env:
       CACHE_REF: type=registry,ref=${{ needs.discover.outputs.image }}:cache-${{ matrix.arch }}
+      DOCKER_BUILD_SUMMARY: false
       TARBALL_NAME: ${{ format('{0}-{1}-{2}-{3}', matrix.geant4_tag, matrix.image, matrix.image_tag, matrix.arch) }}
 
     steps:
@@ -147,8 +148,6 @@ jobs:
 
       - name: Build & Push
         uses: docker/build-push-action@v7
-        env:
-          DOCKER_BUILD_SUMMARY: false
         with:
           # pull ensure we have the latest base image
           pull: true
