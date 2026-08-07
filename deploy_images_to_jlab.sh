@@ -7,6 +7,7 @@ readonly default_os_flavor="almalinux"
 readonly default_os_version="9.4"
 readonly default_image="ghcr.io/gemc/g4install"
 readonly default_destination="/scigroup/cvmfs/geant4/g4install"
+readonly default_podman_storage="/scratch/ungaro"
 readonly image_install_root="/cvmfs/oasis.opensciencegrid.org/geant4/g4install"
 
 geant4_version="$default_geant4_version"
@@ -14,8 +15,10 @@ os_flavor="$default_os_flavor"
 os_version="$default_os_version"
 image="$default_image"
 destination="$default_destination"
+podman_storage="$default_podman_storage"
 container_id=""
 stage=""
+container_command=()
 
 usage() {
 	cat <<EOF
@@ -29,6 +32,7 @@ Options:
   -v, --os-version VERSION     Image OS version (default: $default_os_version)
       --image IMAGE            Container image without a tag (default: $default_image)
   -d, --destination DIRECTORY  Installation root (default: $default_destination)
+      --podman-storage DIR      Podman storage parent (default: $default_podman_storage)
   -h, --help                   Show this help
 
 Examples:
@@ -48,7 +52,7 @@ die() {
 
 cleanup() {
 	if [[ -n "$container_id" ]]; then
-		docker rm -f "$container_id" >/dev/null 2>&1 || true
+		"${container_command[@]}" rm -f "$container_id" >/dev/null 2>&1 || true
 	fi
 	if [[ -n "$stage" && -d "$stage" ]]; then
 		rm -rf -- "$stage"
@@ -84,6 +88,11 @@ while (( $# > 0 )); do
 			destination="$2"
 			shift 2
 			;;
+		--podman-storage)
+			(( $# >= 2 )) || die "$1 requires a value"
+			podman_storage="$2"
+			shift 2
+			;;
 		-h|--help)
 			usage
 			exit 0
@@ -99,7 +108,19 @@ done
 [[ "$os_version" =~ ^[a-zA-Z0-9._-]+$ ]] || die "invalid OS version: $os_version"
 [[ "$image" != *:* ]] || die "--image must not include a tag"
 [[ "$destination" = /* ]] || die "--destination must be an absolute path"
-command -v docker >/dev/null 2>&1 || die "docker is required"
+[[ "$podman_storage" = /* ]] || die "--podman-storage must be an absolute path"
+
+if command -v podman >/dev/null 2>&1; then
+	podman_root="$podman_storage/podman-root"
+	podman_runroot="$podman_storage/podman-runroot"
+	mkdir -p "$podman_root" "$podman_runroot"
+	container_command=(podman --root "$podman_root" --runroot "$podman_runroot")
+	printf 'Using Podman storage under %s\n' "$podman_storage"
+elif command -v docker >/dev/null 2>&1; then
+	container_command=(docker)
+else
+	die "podman or docker is required"
+fi
 
 mkdir -p "$destination"
 [[ -w "$destination" ]] || die "destination is not writable: $destination"
@@ -117,11 +138,13 @@ install_architecture() {
 	local -a platform_candidates package_entries
 
 	printf '\nPulling %s\n' "$image_ref"
-	docker pull --platform "linux/${docker_arch}" "$image_ref"
-	container_id="$(docker create --platform "linux/${docker_arch}" "$image_ref" /bin/true)"
+	"${container_command[@]}" pull --platform "linux/${docker_arch}" "$image_ref"
+	container_id="$(
+		"${container_command[@]}" create --platform "linux/${docker_arch}" "$image_ref" /bin/true
+	)"
 	mkdir -p "$arch_stage"
-	docker cp "${container_id}:${image_install_root}/." "$arch_stage"
-	docker rm -f "$container_id" >/dev/null
+	"${container_command[@]}" cp "${container_id}:${image_install_root}/." "$arch_stage"
+	"${container_command[@]}" rm -f "$container_id" >/dev/null
 	container_id=""
 
 	shopt -s nullglob
