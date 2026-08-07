@@ -113,8 +113,13 @@ done
 if command -v podman >/dev/null 2>&1; then
 	podman_root="$podman_storage/podman-root"
 	podman_runroot="$podman_storage/podman-runroot"
+	podman_storage_conf="$podman_storage/podman-storage.conf"
 	mkdir -p "$podman_root" "$podman_runroot"
-	container_command=(podman --root "$podman_root" --runroot "$podman_runroot")
+	printf '[storage]\ndriver = "overlay"\n' > "$podman_storage_conf"
+	container_command=(
+		env "CONTAINERS_STORAGE_CONF=$podman_storage_conf"
+		podman --root "$podman_root" --runroot "$podman_runroot"
+	)
 	printf 'Using Podman storage under %s\n' "$podman_storage"
 elif command -v docker >/dev/null 2>&1; then
 	container_command=(docker)
