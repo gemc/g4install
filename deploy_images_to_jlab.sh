@@ -117,7 +117,7 @@ install_architecture() {
 	local -a platform_candidates package_entries
 
 	printf '\nPulling %s\n' "$image_ref"
-	docker pull "$image_ref"
+	docker pull --platform "linux/${docker_arch}" "$image_ref"
 	container_id="$(docker create --platform "linux/${docker_arch}" "$image_ref" /bin/true)"
 	mkdir -p "$arch_stage"
 	docker cp "${container_id}:${image_install_root}/." "$arch_stage"
