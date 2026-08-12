@@ -9,6 +9,8 @@
 `g4install` builds and manages [Geant4][geant4] with versioned [Environment Modules][modules]. It supports
 side-by-side Geant4 installations, relocatable binary tarballs, and multi-architecture container images.
 
+<br/>
+
 ## Highlights
 
 - Install and switch between Geant4 versions without changing global system paths.
@@ -16,6 +18,8 @@ side-by-side Geant4 installations, relocatable binary tarballs, and multi-archit
 - Use the same module layout on Linux and macOS.
 - Pull CI-built Linux images for `amd64` and `arm64`.
 - Download relocatable Linux and Apple Silicon tarballs from the rolling development release.
+
+<br/>
 
 ## Installation from source
 
@@ -58,6 +62,8 @@ geant4-config --version
 command -v geant4-config
 ```
 
+<br/>
+
 ## Compile a Geant4 example
 
 With the Geant4 module loaded, compile the bundled B5 example in a separate build directory:
@@ -68,6 +74,8 @@ cd build_B5
 cmake $G4INSTALL/data/Geant4/examples/basic/B5
 make -j4
 ```
+
+<br/>
 
 ## Switching Geant4 versions
 
@@ -80,6 +88,8 @@ module load geant4/11.3.2
 module switch geant4/11.3.2 geant4/11.4.2
 # Build or test against Geant4 11.4.2.
 ```
+
+<br/>
 
 ## Binary tarballs
 
@@ -100,6 +110,8 @@ geant4-config --version
 Install the small set of shared-library dependencies from the
 [binary-tarball prerequisites](#binary-tarball-prerequisites) appendix before using a tarball. Dataset
 installation downloads several gigabytes; set `GEANT4_DATA_BASE_URL` only when using an approved mirror.
+
+<br/>
 
 ## Container images
 
@@ -140,6 +152,8 @@ docker run --rm -it \
 | Debian 13 | `ghcr.io/gemc/g4install:11.4.2-debian-13` | batch + noVNC | yes | yes |
 | Arch Linux latest | `ghcr.io/gemc/g4install:11.4.2-archlinux-latest` | batch + noVNC | yes | no |
 
+<br/>
+
 ## Troubleshooting
 
 ### `module: command not found`
@@ -167,6 +181,8 @@ module load geant4/<version>
 module list
 geant4-config --version
 ```
+
+<br/>
 
 ## Appendix: prerequisites
 
