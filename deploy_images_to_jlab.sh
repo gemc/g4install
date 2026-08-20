@@ -8,7 +8,7 @@ readonly default_os_version="9.4"
 readonly default_image="ghcr.io/gemc/g4install"
 readonly default_destination="/scigroup/cvmfs/geant4/g4install"
 readonly default_podman_storage="/scratch/ungaro"
-readonly image_install_root="/cvmfs/oasis.opensciencegrid.org/geant4/g4install"
+readonly image_install_root="/cvmfs/oasis.opensciencegrid.org/jlab/geant4/g4install"
 
 geant4_version="$default_geant4_version"
 os_flavor="$default_os_flavor"
