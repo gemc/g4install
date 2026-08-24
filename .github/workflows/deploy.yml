@@ -281,51 +281,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: summary-${{ matrix.geant4_tag }}-${{ matrix.image }}-${{ matrix.image_tag }}-manifest
-          path: summaries/summary-*.md
+          path: ${{ env.MANIFEST_SUMMARY_FILE }}
           if-no-files-found: ignore
-
-  workflow_summary:
-    if: ${{ always() && github.event_name != 'pull_request' }}
-    name: How to run the images
-    needs: [ manifest ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download image summaries
-        continue-on-error: true
-        uses: actions/download-artifact@v7
-        with:
-          pattern: summary-*-manifest
-          merge-multiple: true
-
-      - name: Write consolidated summary
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          summaries=(summary-*.md)
-
-          {
-            echo "# Geant4 Images"
-            echo ""
-            echo "Repository: [g4install images](https://github.com/gemc/g4install/pkgs/container/g4install)"
-            echo ""
-            echo "Set these convenience variables for graphical use (choose your own password):"
-            echo '```bash'
-            echo 'VPORTS=(-p 6080:6080 -p 5900:5900)'
-            echo 'VNC_PASS=(-e X11VNC_PASSWORD=change-me)'
-            echo 'VNC_BIND=(-e VNC_BIND=0.0.0.0)'
-            echo 'GEO_FLAGS=(-e GEOMETRY=1920x1200)'
-            echo '```'
-            echo ""
-
-            if (( ${#summaries[@]} == 0 )); then
-              echo "No image run instructions were produced. Check the manifest jobs for failures."
-            else
-              for summary in "${summaries[@]}"; do
-                cat "$summary"
-                echo ""
-                echo "---"
-                echo ""
-              done
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"

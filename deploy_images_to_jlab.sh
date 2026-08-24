@@ -18,6 +18,9 @@ destination="$default_destination"
 podman_storage="$default_podman_storage"
 container_id=""
 stage=""
+replacement_dir=""
+replacement_target=""
+replacement_backup=""
 container_command=()
 
 usage() {
@@ -41,7 +44,7 @@ Examples:
   $(basename "$0") -g 11.4.2 -o almalinux -v 9.4 -d /tmp/g4install
 
 The AlmaLinux 9.4 images install as almalinux9-gcc11-arm64 and almalinux9-gcc11-x86_64.
-Existing package-version directories are kept and reported; this script does not replace them.
+Existing package-version directories are replaced from the pulled images; unrelated versions are kept.
 EOF
 }
 
@@ -53,6 +56,14 @@ die() {
 cleanup() {
 	if [[ -n "$container_id" ]]; then
 		"${container_command[@]}" rm -f "$container_id" >/dev/null 2>&1 || true
+	fi
+	if [[ -n "$replacement_backup" && -n "$replacement_target" &&
+		( -e "$replacement_backup" || -L "$replacement_backup" ) &&
+		! -e "$replacement_target" && ! -L "$replacement_target" ]]; then
+		mv -- "$replacement_backup" "$replacement_target" || true
+	fi
+	if [[ -n "$replacement_dir" && -d "$replacement_dir" ]]; then
+		rm -rf -- "$replacement_dir"
 	fi
 	if [[ -n "$stage" && -d "$stage" ]]; then
 		rm -rf -- "$stage"
@@ -134,12 +145,42 @@ stage="$(mktemp -d /tmp/g4install-pack.XXXXXX)"
 os_major="${os_version%%.*}"
 platform_prefix="${os_flavor}${os_major}"
 
+install_entry() {
+	local source_entry="$1"
+	local target_parent="$2"
+	local entry_name target_entry
+
+	entry_name="$(basename "$source_entry")"
+	target_entry="$target_parent/$entry_name"
+	replacement_dir="$(mktemp -d "$target_parent/.${entry_name}.deploy.XXXXXX")"
+	replacement_target="$target_entry"
+	replacement_backup="$replacement_dir/previous"
+
+	cp -a "$source_entry" "$replacement_dir/new"
+	if [[ -e "$target_entry" || -L "$target_entry" ]]; then
+		printf 'Replacing %s/%s\n' "$(basename "$(dirname "$target_parent")")" \
+			"$(basename "$target_parent")/$entry_name"
+		mv -- "$target_entry" "$replacement_backup"
+	else
+		printf 'Installing %s/%s\n' "$(basename "$(dirname "$target_parent")")" \
+			"$(basename "$target_parent")/$entry_name"
+	fi
+
+	mv -- "$replacement_dir/new" "$target_entry"
+	rm -rf -- "$replacement_dir"
+	replacement_dir=""
+	replacement_target=""
+	replacement_backup=""
+
+	[[ -d "$target_entry" ]] || die "failed to install $target_entry"
+}
+
 install_architecture() {
 	local docker_arch="$1"
 	local install_arch="$2"
 	local image_ref="${image}:${geant4_version}-${os_flavor}-${os_version}-${docker_arch}"
 	local arch_stage="${stage}/${docker_arch}"
-	local source_platform target_platform package entry entry_name
+	local source_platform target_platform package entry
 	local -a platform_candidates package_entries
 
 	printf '\nPulling %s\n' "$image_ref"
@@ -175,26 +216,15 @@ install_architecture() {
 		shopt -u nullglob dotglob
 		(( ${#package_entries[@]} > 0 )) || die "image contains an empty $package directory"
 		for entry in "${package_entries[@]}"; do
-			entry_name="$(basename "$entry")"
 			[[ -d "$entry" ]] || die "expected a version directory: $entry"
-			if [[ -e "$target_platform/$package/$entry_name" ]]; then
-				printf 'Keeping existing %s/%s/%s\n' "$(basename "$target_platform")" "$package" \
-					"$entry_name"
-			else
-				printf 'Installing %s/%s/%s\n' "$(basename "$target_platform")" "$package" \
-					"$entry_name"
-				cp -a "$entry" "$target_platform/$package/"
-			fi
-			[[ -d "$target_platform/$package/$entry_name" ]] || {
-				die "failed to install $package/$entry_name under $target_platform"
-			}
+			install_entry "$entry" "$target_platform/$package"
 		done
-		printf 'Verified %s/%s\n' "$(basename "$target_platform")" "$package"
+		printf 'Deployed %s/%s\n' "$(basename "$target_platform")" "$package"
 	done
 }
 
 install_architecture arm64 arm64
 install_architecture amd64 x86_64
 
-printf '\nInstalled and verified Geant4 %s, CLHEP, and Xerces-C under %s\n' \
+printf '\nDeployed Geant4 %s, CLHEP, and Xerces-C under %s\n' \
 	"$geant4_version" "$destination"
