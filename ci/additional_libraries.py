@@ -128,17 +128,23 @@ def install_xercesc(version: str) -> str:
 	return commands
 
 
-def install_geant4(version: str) -> str:
+def install_geant4(version: str, debug_symbols: bool = False) -> str:
 	commands = f"\n# Install Geant4 {version}\n"
+	if debug_symbols:
+		commands += "# RelWithDebInfo: Geant4 and its CLHEP dependency carry symbols for profiling.\n"
+	# install_geant4 installs CLHEP as a child process, which inherits G4_BUILD_TYPE, so a single
+	# prefix gives both libraries debug symbols.
+	prefix = "G4_BUILD_TYPE=RelWithDebInfo " if debug_symbols else ""
 	commands += f"RUN cat {remote_entrypoint()} \\\n"
 	commands += f" && DOCKER_ENTRYPOINT_SOURCE_ONLY=1 . {remote_entrypoint()} \\\n"
-	commands += f" && install_geant4 {version}\n"
+	commands += f" && {prefix}install_geant4 {version}\n"
 	return commands
 
 
 def install_additional_libraries(image: str, geant4_version: str, root_version: str,
                                  meson_version: str,
-                                 novnc_version: str) -> str:
+                                 novnc_version: str,
+                                 debug_symbols: bool = False) -> str:
 	commands = '\n'
 	if image == "archlinux":
 		commands += install_envmod_on_arch()
@@ -151,7 +157,7 @@ def install_additional_libraries(image: str, geant4_version: str, root_version: 
 	commands += install_meson(meson_version)
 	commands += install_novnc(novnc_version)
 	commands += install_g4install(True, geant4_version)
-	commands += install_geant4(geant4_version)
+	commands += install_geant4(geant4_version, debug_symbols)
 
 	return commands
 
@@ -190,6 +196,10 @@ def main():
 		"--geant4-version", default="11.4.0",
 		help="Version of Geant4 to install (default: %(default)s)"
 	)
+	parser.add_argument(
+		"--debug-symbols", action="store_true",
+		help="Build Geant4 and CLHEP with RelWithDebInfo (debug symbols) for profiling."
+	)
 
 	args = parser.parse_args()
 
@@ -206,6 +216,7 @@ def main():
 		args.root_version,
 		args.meson_version,
 		args.novnc_version,
+		args.debug_symbols,
 	)
 	print(commands)
 

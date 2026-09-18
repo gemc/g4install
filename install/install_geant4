@@ -26,7 +26,11 @@ cmake_data="  -DGEANT4_INSTALL_DATA=ON -DGEANT4_INSTALL_PACKAGE_CACHE=ON"
 cmake_pack="  -DBUILD_STATIC_LIBS=ON -DGEANT4_USE_SYSTEM_EXPAT=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DGEANT4_USE_SYSTEM_ZLIB=ON"
 cmake_mt="    -DGEANT4_BUILD_MULTITHREADED=ON  -DGEANT4_BUILD_BUILTIN_BACKTRACE=OFF "
 x11_option=" -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_RAYTRACER_X11=ON "
-cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmake_mt $x11_option"
+# Optional build type. Set G4_BUILD_TYPE=RelWithDebInfo to keep optimization while emitting debug
+# symbols (used by the profiling image so Valgrind can name Geant4 routines). Unset keeps the default.
+cmake_buildtype=""
+[ -n "${G4_BUILD_TYPE:-}" ] && cmake_buildtype="-DCMAKE_BUILD_TYPE=$G4_BUILD_TYPE"
+cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmake_mt $x11_option $cmake_buildtype"
 #  not used
 # -DCMAKE_CXX_STANDARD=20
 # -DGEANT4_USE_SYSTEM_ZLIB=ON

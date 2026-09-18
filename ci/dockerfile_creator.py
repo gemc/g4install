@@ -182,7 +182,8 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
                       meson_version: str,
                       novnc_version: str,
                       with_package: bool = False,
-                      package_arch: str = "amd64") -> str:
+                      package_arch: str = "amd64",
+                      debug_symbols: bool = False) -> str:
 	commands = ""
 	commands += docker_header(image, tag)
 	commands += copy_setup_file(image)
@@ -195,7 +196,8 @@ def create_dockerfile(image: str, tag: str, geant4_version: str, root_version: s
 	                                         geant4_version,
 	                                         root_version,
 	                                         meson_version,
-	                                         novnc_version)
+	                                         novnc_version,
+	                                         debug_symbols)
 
 	commands += "\n# Set permissions to remote startup files\n"
 	commands += f'RUN chmod 0755 {remote_entrypoint()} \n'
@@ -256,6 +258,10 @@ def main():
 		"--package-arch", choices=["amd64", "arm64"], default="amd64",
 		help="Architecture suffix used in the tarball name (default: %(default)s)"
 	)
+	parser.add_argument(
+		"--debug-symbols", action="store_true",
+		help="Build Geant4 and CLHEP with RelWithDebInfo (debug symbols) for profiling images."
+	)
 
 	args = parser.parse_args()
 
@@ -275,6 +281,7 @@ def main():
 		args.novnc_version,
 		args.with_package,
 		args.package_arch,
+		args.debug_symbols,
 	)
 	print(dockerfile)
 

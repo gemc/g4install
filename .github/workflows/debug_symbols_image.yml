@@ -1,0 +1,108 @@
+name: Debug-Symbols Image
+
+# Builds a single Ubuntu 26.04 image with Geant4 and CLHEP compiled RelWithDebInfo (debug symbols),
+# for the Valgrind Profile workflows so callgrind can name Geant4/CLHEP routines. It is the normal
+# Ubuntu 26.04 image (same packages, ROOT, Meson, noVNC) except that Geant4 and CLHEP carry symbols.
+#
+# Published as ghcr.io/gemc/g4install:<geant4>-ubuntu-26.04-debug, amd64 only (profiling runs on
+# amd64 runners). Manual dispatch only: nothing is published until you run it.
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: g4install-debug-symbols-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+    inputs:
+      geant4:
+        description: Geant4 version (blank uses the first supported version in ci/env.sh).
+        required: false
+        default: ''
+
+jobs:
+  build:
+    name: Build ubuntu-26.04 debug-symbols image
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OS: ubuntu
+      OS_TAG: "26.04"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve versions and image
+        id: v
+        shell: bash
+        run: |
+          set -euo pipefail
+          source ci/env.sh
+          g4="${{ github.event.inputs.geant4 }}"
+          [ -z "$g4" ] && g4="$(get_geant4_tags | awk '{print $1}')"
+          image="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          {
+            echo "geant4=$g4"
+            echo "root=$(get_root_tag "$g4")"
+            echo "meson=$(get_meson_tag "$g4")"
+            echo "novnc=$(get_novnc_tag "$g4")"
+            echo "image=$image"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Dockerfile
+        run: |
+          python3 ci/dockerfile_creator.py \
+            -i "${OS}" \
+            -t "${OS_TAG}" \
+            --root-version "${{ steps.v.outputs.root }}" \
+            --meson-version "${{ steps.v.outputs.meson }}" \
+            --novnc-version "${{ steps.v.outputs.novnc }}" \
+            --geant4-version "${{ steps.v.outputs.geant4 }}" \
+            --debug-symbols \
+            > Dockerfile.generated
+          cat Dockerfile.generated
+
+      - name: Get upstream commit
+        run: |
+          echo "UPSTREAM_REV=$(git ls-remote https://github.com/gemc/g4install HEAD | cut -f1)" >> "$GITHUB_ENV"
+
+      - name: Build & Push (amd64)
+        uses: docker/build-push-action@v7
+        with:
+          pull: true
+          no-cache: true
+          build-args: |
+            UPSTREAM_REV=${{ env.UPSTREAM_REV }}
+          context: .
+          file: ./Dockerfile.generated
+          # Only the runnable image stage; no package tarball, so no collision with the normal image.
+          target: final
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.v.outputs.image }}:${{ steps.v.outputs.geant4 }}-${{ env.OS }}-${{ env.OS_TAG }}-debug
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          tag="${{ steps.v.outputs.geant4 }}-${{ env.OS }}-${{ env.OS_TAG }}-debug"
+          {
+            echo "## Debug-symbols image"
+            echo
+            echo "\`${{ steps.v.outputs.image }}:${tag}\` (amd64) — Geant4 and CLHEP built RelWithDebInfo."
+            echo
+            echo "Use it in the Valgrind Profile workflow so callgrind can name Geant4/CLHEP routines."
+          } >> "$GITHUB_STEP_SUMMARY"
