@@ -46,11 +46,37 @@ build_matrix_build() {
 				body+="\"platform\":\"${platform}\","
 				body+="\"runner\":\"${runner}\","
 				body+="\"suffix\":\"${suffix}\","
-				body+="\"logs_dir\":\"${logs_dir}\""
+				body+="\"logs_dir\":\"${logs_dir}\","
+				body+="\"debug\":\"false\""
 				body+="}"
 				sep=","
 			done
 		done
+
+		# Additional profiling image: an amd64 Ubuntu 26.04 build with Geant4 and CLHEP compiled
+		# RelWithDebInfo (debug symbols). It is an EXTRA tag, <g4>-ubuntu-26.04-debug, published
+		# alongside the release image (it does not replace it). suffix is empty so it is pushed as the
+		# final single-arch tag directly (no manifest); no package tarball is produced for it.
+		local droot dmeson dnovnc drunner
+		droot="$(get_root_tag "$g4v")"
+		dmeson="$(get_meson_tag "$g4v")"
+		dnovnc="$(get_novnc_tag "$g4v")"
+		drunner="$(get_runner amd64)"
+		body+="${sep}{"
+		body+="\"image\":\"ubuntu\","
+		body+="\"image_tag\":\"26.04\","
+		body+="\"geant4_tag\":\"${g4v}\","
+		body+="\"root_tag\":\"${droot}\","
+		body+="\"meson_tag\":\"${dmeson}\","
+		body+="\"novnc_tag\":\"${dnovnc}\","
+		body+="\"arch\":\"amd64\","
+		body+="\"platform\":\"linux/amd64\","
+		body+="\"runner\":\"${drunner}\","
+		body+="\"suffix\":\"\","
+		body+="\"logs_dir\":\"logs-amd64-debug\","
+		body+="\"debug\":\"true\""
+		body+="}"
+		sep=","
 	done
 
 	local json="{\"include\":[${body}]}"

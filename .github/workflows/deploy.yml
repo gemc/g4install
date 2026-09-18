@@ -90,7 +90,7 @@ jobs:
   # uses matrix_build
   build_arch:
     if: ${{ github.event_name != 'pull_request' }}
-    name: ${{ matrix.arch }} ${{ matrix.geant4_tag }} ${{ matrix.image }}:${{ matrix.image_tag }}
+    name: ${{ matrix.arch }} ${{ matrix.geant4_tag }} ${{ matrix.image }}:${{ matrix.image_tag }}${{ matrix.debug == 'true' && ' (debug)' || '' }}
     needs: [ overview, discover ]
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -98,7 +98,7 @@ jobs:
       matrix: ${{ fromJSON(needs.discover.outputs.matrix_build) }}
 
     env:
-      CACHE_REF: type=registry,ref=${{ needs.discover.outputs.image }}:cache-${{ matrix.arch }}
+      CACHE_REF: type=registry,ref=${{ needs.discover.outputs.image }}:cache-${{ matrix.arch }}${{ matrix.debug == 'true' && '-debug' || '' }}
       DOCKER_BUILD_SUMMARY: false
       TARBALL_NAME: ${{ format('{0}-{1}-{2}-{3}', matrix.geant4_tag, matrix.image, matrix.image_tag, matrix.arch) }}
 
@@ -122,13 +122,21 @@ jobs:
         with:
           images: ${{ needs.discover.outputs.image }}
           tags: |
-            type=raw,value=${{ format('{0}-{1}-{2}', matrix.geant4_tag, matrix.image, matrix.image_tag) }}
+            type=raw,value=${{ format('{0}-{1}-{2}', matrix.geant4_tag, matrix.image, matrix.image_tag) }}${{ matrix.debug == 'true' && '-debug' || '' }}
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
-            org.opencontainers.image.description=Geant4 ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }} (${{ matrix.arch }})
+            org.opencontainers.image.description=Geant4 ${{ matrix.geant4_tag }} on ${{ matrix.image }}:${{ matrix.image_tag }} (${{ matrix.arch }})${{ matrix.debug == 'true' && ' debug symbols' || '' }}
 
       - name: Generate Dockerfile
         run: |
+          # The debug entry builds Geant4/CLHEP with symbols and skips the binary-tarball stages
+          # (its package would collide with the release image's tarball name).
+          extra_args=()
+          if [[ "${{ matrix.debug }}" == "true" ]]; then
+            extra_args+=(--debug-symbols)
+          else
+            extra_args+=(--with-package --package-arch "${{ matrix.arch }}")
+          fi
           python3 ci/dockerfile_creator.py \
           -i "${{ matrix.image }}" \
           -t "${{ matrix.image_tag }}" \
@@ -136,8 +144,7 @@ jobs:
           --meson-version "${{ matrix.meson_tag }}" \
           --novnc-version "${{ matrix.novnc_tag  }}" \
           --geant4-version "${{ matrix.geant4_tag }}" \
-          --with-package \
-          --package-arch "${{ matrix.arch }}" \
+          "${extra_args[@]}" \
           > Dockerfile.generated
           cat Dockerfile.generated
 
@@ -171,7 +178,9 @@ jobs:
 
       # Reuse the just-built layers (via the BuildKit cache) to assemble the
       # Geant4 binary tarball and export it to the runner filesystem.
+      # The debug image is not packaged as a binary tarball, so skip these stages for it.
       - name: Export Geant4 tarball (runner artifact)
+        if: ${{ matrix.debug != 'true' }}
         uses: docker/build-push-action@v7
         with:
           pull: true
@@ -185,6 +194,7 @@ jobs:
           outputs: type=local,dest=${{ runner.temp }}/artifacts/package-${{ env.TARBALL_NAME }}
 
       - name: Upload Geant4 tarball artifact
+        if: ${{ matrix.debug != 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: geant4-tarball-${{ env.TARBALL_NAME }}
