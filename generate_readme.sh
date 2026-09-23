@@ -416,6 +416,19 @@ EOF
             printf '#### Geant4 %s\n\n' "$geant4_version"
             print_image_table "$geant4_version"
             printf '\n'
+            cat <<'EOF' | render_template "$geant4_version" "$first_suffix"
+##### Special debug image
+
+`ghcr.io/gemc/g4install:@GEANT4_VERSION@-ubuntu-26.04-debug` is a special image for debugging and profiling.
+Geant4 and CLHEP are built with debug symbols using `RelWithDebInfo`, which keeps optimization enabled.
+It supports batch and VNC/noVNC operation, is available for `amd64` only, and has no binary tarball.
+On `arm64` hosts, use `--platform=linux/amd64` with emulation:
+
+```shell
+docker run --rm -it --platform=linux/amd64 ghcr.io/gemc/g4install:@GEANT4_VERSION@-ubuntu-26.04-debug bash -li
+```
+
+EOF
         done
 
         cat <<'EOF'

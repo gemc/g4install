@@ -152,6 +152,17 @@ docker run --rm -it \
 | Debian 13 | `ghcr.io/gemc/g4install:11.4.2-debian-13` | batch + noVNC | yes | yes |
 | Arch Linux latest | `ghcr.io/gemc/g4install:11.4.2-archlinux-latest` | batch + noVNC | yes | no |
 
+##### Special debug image
+
+`ghcr.io/gemc/g4install:11.4.2-ubuntu-26.04-debug` is a special image for debugging and profiling.
+Geant4 and CLHEP are built with debug symbols using `RelWithDebInfo`, which keeps optimization enabled.
+It supports batch and VNC/noVNC operation, is available for `amd64` only, and has no binary tarball.
+On `arm64` hosts, use `--platform=linux/amd64` with emulation:
+
+```shell
+docker run --rm -it --platform=linux/amd64 ghcr.io/gemc/g4install:11.4.2-ubuntu-26.04-debug bash -li
+```
+
 <br/>
 
 ## Troubleshooting
