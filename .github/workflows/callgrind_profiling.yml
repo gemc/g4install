@@ -1,0 +1,220 @@
+# Callgrind profiling of selected Geant4 examples.
+#
+# Runs after the "Deploy Geant4 Images" workflow has published the images, pulls the amd64 Ubuntu
+# Geant4 *debug* image (Geant4 + CLHEP built RelWithDebInfo, so Valgrind can name the routines) and,
+# for each example in the matrix, compiles it and profiles a batch run with Callgrind, saving the top
+# 30 routines by instruction count.
+#
+# The matrix has two dimensions, run as the full cross product (one job per cell):
+#   * example      - add an entry under `strategy.matrix.example` with its `label`, its `path` under
+#                    the Geant4 `examples/` tree, the number of `events`, and an optional `macro`.
+#   * physics_list - the reference physics list each example is run with. The examples hardcode their
+#                    physics list, so ci/build_example.sh patches each one (via replace_physics_list.py)
+#                    to build the list through the extensible factory, which also accepts the
+#                    "+"/"_" extension syntax (e.g. FTFP_BERT_EMX+G4OpticalPhysics).
+name: Callgrind Profiling
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: callgrind-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_run:
+    workflows: [ "Deploy Geant4 Images" ]   # run once the images have been published
+    types: [ completed ]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Resolve the GHCR image reference and the debug tag from ci/env.sh (single source of truth),
+  # so the Geant4 version and tag never need to be hardcoded here.
+  discover:
+    # Only profile real publishes: the debug image is pushed on non-PR runs that succeeded.
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event != 'pull_request' }}
+    name: Resolve debug image
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.scan.outputs.image }}
+      debug_tag: ${{ steps.scan.outputs.debug_tag }}
+      geant4_tag: ${{ steps.scan.outputs.geant4_tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - id: scan
+        name: Compute image reference
+        run: |
+          set -euo pipefail
+          source ci/env.sh
+          # First supported Geant4 version; the debug image is the amd64 Ubuntu 26.04 build.
+          geant4_tag="$(get_geant4_tags | awk '{print $1}')"
+          owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          repo="${GITHUB_REPOSITORY##*/}"
+          {
+            echo "image=ghcr.io/${owner}/${repo}"
+            echo "debug_tag=${geant4_tag}-ubuntu-26.04-debug"
+            echo "geant4_tag=${geant4_tag}"
+          } >> "$GITHUB_OUTPUT"
+
+  callgrind:
+    name: Callgrind ${{ matrix.example.label }} / ${{ matrix.physics_list }}
+    needs: [ discover ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - label: basic/B5
+            path: basic/B5
+            macro: run1.mac
+            events: 100
+          - label: electromagnetic/TestEm4
+            path: extended/electromagnetic/TestEm4
+            events: 50
+          - label: optical/wls
+            path: extended/optical/wls
+            events: 20
+          - label: field/field03
+            path: extended/field/field03
+            events: 50
+        physics_list:
+          - "FTFP_BERT"
+          - "FTFP_BERT_EMX"
+#          - "QGSP_BERT"
+#          - "FTFP_BERT_EMX+G4OpticalPhysics"
+
+    container:
+      image: ${{ needs.discover.outputs.image }}:${{ needs.discover.outputs.debug_tag }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    env:
+      GEANT4_TAG: ${{ needs.discover.outputs.geant4_tag }}
+      EXAMPLE_PATH: ${{ matrix.example.path }}
+      EXAMPLE_MACRO: ${{ matrix.example.macro }}
+      EVENTS: ${{ matrix.example.events }}
+      # Consumed by ci/build_example.sh to patch the example's physics list through the factory.
+      PHYSICS_LIST: ${{ matrix.physics_list }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Compile example and profile with Callgrind
+        run: |
+          set -euo pipefail
+
+          # Activate the Geant4 environment the same way the image entrypoint does: this loads the
+          # geant4 module (G4INSTALL, PATH, ...); geant4-config --sh exports the dataset variables.
+          DOCKER_ENTRYPOINT_SOURCE_ONLY=1 . /usr/local/bin/docker-entrypoint.sh
+          eval "$(geant4-config --sh)"
+
+          # Compile the example (out-of-source, installed tree untouched). The script prints the
+          # resolved example source directory and the built executable, one per line.
+          build_out="${RUNNER_TEMP}/build_example.out"
+          ci/build_example.sh "${EXAMPLE_PATH}" > "$build_out"
+          src="$(sed -n '1p' "$build_out")"
+          bin="$(sed -n '2p' "$build_out")"
+
+          # Pick the run macro: the row's named one when present, otherwise auto-discover a batch
+          # macro that issues /run/beamOn (excluding vis/gui macros).
+          macro=""
+          if [ -n "${EXAMPLE_MACRO}" ] && [ -f "$src/${EXAMPLE_MACRO}" ]; then
+            macro="$src/${EXAMPLE_MACRO}"
+          else
+            for m in "$src"/*.mac "$src"/*.in; do
+              [ -f "$m" ] || continue
+              case "$(basename "$m")" in vis.mac|gui.mac|init_vis.mac|vis_*.mac) continue ;; esac
+              if grep -qE '/run/beamOn' "$m"; then macro="$m"; break; fi
+            done
+          fi
+
+          # Produce the run macro with the matrix event count (shipped macro preserved, beamOn
+          # overridden). With no shipped macro, a minimal "/run/beamOn <events>" is emitted.
+          run_macro="${RUNNER_TEMP}/callgrind_run.mac"
+          if [ -n "$macro" ]; then
+            echo "Using shipped macro: $macro (events -> ${EVENTS})"
+            ci/replace_beam_on.sh "${EVENTS}" "$macro" > "$run_macro"
+          else
+            echo "No shipped run macro found; using a minimal batch macro (events -> ${EVENTS})"
+            ci/replace_beam_on.sh "${EVENTS}" > "$run_macro"
+          fi
+
+          # Some examples (e.g. optical/wls) parse the macro via a "-m" option; others take it as the
+          # first positional argument. Pick based on the example sources.
+          if grep -qE '"\-m"' "$src"/*.cc 2>/dev/null; then
+            run_args=(-m "$run_macro")
+          else
+            run_args=("$run_macro")
+          fi
+
+          # Profile a single-threaded batch run so the top routines are not split across worker threads.
+          export G4FORCENUMBEROFTHREADS=1
+          out="${GITHUB_WORKSPACE}/callgrind.out"
+          ( cd "$src" && valgrind --tool=callgrind --callgrind-out-file="$out" \
+              "$bin" "${run_args[@]}" )
+
+          # Annotate and extract the top 30 routines by instruction count (Ir).
+          callgrind_annotate --threshold=100 --auto=no "$out" > "${GITHUB_WORKSPACE}/callgrind_annotate.txt"
+          awk '
+            /file:function/ { infn=1; next }
+            infn && /^-+$/  { next }
+            infn {
+              if (NF==0) exit
+              print
+              if (++n >= 30) exit
+            }
+          ' "${GITHUB_WORKSPACE}/callgrind_annotate.txt" > "${GITHUB_WORKSPACE}/callgrind_top30.txt"
+
+          echo "Top 30 routines for ${EXAMPLE_PATH}:"
+          cat "${GITHUB_WORKSPACE}/callgrind_top30.txt"
+
+      - name: Job summary (top 30 routines)
+        if: always()
+        run: |
+          set -euo pipefail
+          top="${GITHUB_WORKSPACE}/callgrind_top30.txt"
+          {
+            echo "## Callgrind — ${{ matrix.example.label }} — ${PHYSICS_LIST}"
+            echo ""
+            echo "Example \`${EXAMPLE_PATH}\` — physics list \`${PHYSICS_LIST}\` — \`${EVENTS}\` events"
+            echo "— Geant4 \`${GEANT4_TAG}\` debug image"
+            echo ""
+            if [ -s "$top" ]; then
+              echo "### Top 30 routines (by Ir)"
+              echo '```'
+              cat "$top"
+              echo '```'
+            else
+              echo "_No Callgrind output was produced (the run may have failed)._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # A filesystem-safe artifact name from the example label and physics list ('/' and '+' -> '-').
+      - name: Compute artifact name
+        if: always()
+        id: artifact
+        run: |
+          echo "name=callgrind-${{ matrix.example.label }}-${{ matrix.physics_list }}" \
+            | tr '/+' '--' >> "$GITHUB_OUTPUT"
+
+      - name: Upload Callgrind artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: |
+            callgrind.out
+            callgrind_annotate.txt
+            callgrind_top30.txt
+          if-no-files-found: warn
