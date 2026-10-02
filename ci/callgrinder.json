@@ -1,0 +1,14 @@
+{
+  "cost": "CEst",
+  "top_routines": 30,
+  "categories": [
+    { "label": "Field propagation", "match": "G4PropagatorInField::ComputeStep" },
+    { "label": "Stepping", "match": "G4SteppingManager::Stepping" },
+    { "label": "Geometry navigation", "match": "G4Navigator::ComputeStep" },
+    { "label": "Multiple scattering", "match": "G4VMultipleScattering::AlongStep" },
+    { "label": "Ionisation / energy loss", "match": "G4VEnergyLossProcess::(PostStepDoIt|AlongStepDoIt)" },
+    { "label": "Optical boundary", "match": "G4OpBoundaryProcess::PostStepDoIt" },
+    { "label": "Cerenkov", "match": "G4Cerenkov::PostStepDoIt" },
+    { "family": "Microscopic cross section", "discover": "(G4\\w+)::Compute\\w*MicroscopicCrossSection" }
+  ]
+}

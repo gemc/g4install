@@ -4,9 +4,9 @@
 lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 
 # Single source of truth for supported Geant4 versions (space-separated)
-supported_g4_versions="11.4.2"
-root_version="v6-40-02"
-meson_version="1.10.2"
+supported_g4_versions="11.4.3"
+root_version="v6-40-04"
+meson_version="1.12.1"
 novnc_version="v1.7.0"
 
 # Returns success if $1 is in $supported_g4_versions

@@ -44,11 +44,11 @@ module avail geant4
 
 Add the `module use` line to `.bashrc` or `.zshrc` to make the modulefiles available in future shells.
 
-### 3. Build Geant4 11.4.2
+### 3. Build Geant4 11.4.3
 
 ```shell
 module load sim_system
-install_geant4 11.4.2
+install_geant4 11.4.3
 ```
 
 The installer builds CLHEP and Xerces-C when needed, downloads the Geant4 datasets, and installs everything
@@ -57,7 +57,7 @@ under `$HOME/g4install/<platform>/`. The build can take a while and requires sev
 ### 4. Load and verify the installation
 
 ```shell
-module load geant4/11.4.2
+module load geant4/11.4.3
 geant4-config --version
 command -v geant4-config
 ```
@@ -85,8 +85,8 @@ Installed versions coexist in separate directories. Use an explicit old and new 
 module load geant4/11.3.2
 # Build or test against Geant4 11.3.2.
 
-module switch geant4/11.3.2 geant4/11.4.2
-# Build or test against Geant4 11.4.2.
+module switch geant4/11.3.2 geant4/11.4.3
+# Build or test against Geant4 11.4.3.
 ```
 
 <br/>
@@ -98,10 +98,10 @@ your OS and CPU architecture, extract it into an empty directory, install the Ge
 generated environment file:
 
 ```shell
-mkdir -p "$HOME/geant4-11.4.2"
-tar -xzf geant4-11.4.2-ubuntu-24.04-amd64.tar.gz \
-  -C "$HOME/geant4-11.4.2" --strip-components=1
-cd "$HOME/geant4-11.4.2"
+mkdir -p "$HOME/geant4-11.4.3"
+tar -xzf geant4-11.4.3-ubuntu-24.04-amd64.tar.gz \
+  -C "$HOME/geant4-11.4.3" --strip-components=1
+cd "$HOME/geant4-11.4.3"
 ./install_geant4_data.sh
 source ./geant4.env
 geant4-config --version
@@ -121,7 +121,7 @@ support batch operation. AlmaLinux 10 is headless; the other images also provide
 Run an interactive login shell:
 
 ```shell
-docker run --rm -it ghcr.io/gemc/g4install:11.4.2-ubuntu-24.04 bash -li
+docker run --rm -it ghcr.io/gemc/g4install:11.4.3-ubuntu-24.04 bash -li
 ```
 
 Start the default noVNC desktop, then open <http://localhost:6080>:
@@ -132,7 +132,7 @@ docker run --rm -it \
   -e X11VNC_PASSWORD=change-me \
   -e VNC_BIND=0.0.0.0 \
   -e GEOMETRY=1920x1200 \
-  ghcr.io/gemc/g4install:11.4.2-ubuntu-24.04
+  ghcr.io/gemc/g4install:11.4.3-ubuntu-24.04
 ```
 
 > [!NOTE]
@@ -140,27 +140,27 @@ docker run --rm -it \
 
 ### Supported images
 
-#### Geant4 11.4.2
+#### Geant4 11.4.3
 
 | Base image | Registry tag | Modes | `amd64` | `arm64` |
 | --- | --- | --- | :---: | :---: |
-| Ubuntu 24.04 | `ghcr.io/gemc/g4install:11.4.2-ubuntu-24.04` | batch + noVNC | yes | yes |
-| Ubuntu 26.04 | `ghcr.io/gemc/g4install:11.4.2-ubuntu-26.04` | batch + noVNC | yes | yes |
-| Fedora 44 | `ghcr.io/gemc/g4install:11.4.2-fedora-44` | batch + noVNC | yes | yes |
-| AlmaLinux 9.4 | `ghcr.io/gemc/g4install:11.4.2-almalinux-9.4` | batch + noVNC | yes | yes |
-| AlmaLinux 10 | `ghcr.io/gemc/g4install:11.4.2-almalinux-10` | batch | yes | yes |
-| Debian 13 | `ghcr.io/gemc/g4install:11.4.2-debian-13` | batch + noVNC | yes | yes |
-| Arch Linux latest | `ghcr.io/gemc/g4install:11.4.2-archlinux-latest` | batch + noVNC | yes | no |
+| Ubuntu 24.04 | `ghcr.io/gemc/g4install:11.4.3-ubuntu-24.04` | batch + noVNC | yes | yes |
+| Ubuntu 26.04 | `ghcr.io/gemc/g4install:11.4.3-ubuntu-26.04` | batch + noVNC | yes | yes |
+| Fedora 44 | `ghcr.io/gemc/g4install:11.4.3-fedora-44` | batch + noVNC | yes | yes |
+| AlmaLinux 9.4 | `ghcr.io/gemc/g4install:11.4.3-almalinux-9.4` | batch + noVNC | yes | yes |
+| AlmaLinux 10 | `ghcr.io/gemc/g4install:11.4.3-almalinux-10` | batch | yes | yes |
+| Debian 13 | `ghcr.io/gemc/g4install:11.4.3-debian-13` | batch + noVNC | yes | yes |
+| Arch Linux latest | `ghcr.io/gemc/g4install:11.4.3-archlinux-latest` | batch + noVNC | yes | no |
 
 ##### Special debug image
 
-`ghcr.io/gemc/g4install:11.4.2-ubuntu-26.04-debug` is a special image for debugging and profiling.
+`ghcr.io/gemc/g4install:11.4.3-ubuntu-26.04-debug` is a special image for debugging and profiling.
 Geant4 and CLHEP are built with debug symbols using `RelWithDebInfo`, which keeps optimization enabled.
 It supports batch and VNC/noVNC operation, is available for `amd64` only, and has no binary tarball.
 On `arm64` hosts, use `--platform=linux/amd64` with emulation:
 
 ```shell
-docker run --rm -it --platform=linux/amd64 ghcr.io/gemc/g4install:11.4.2-ubuntu-26.04-debug bash -li
+docker run --rm -it --platform=linux/amd64 ghcr.io/gemc/g4install:11.4.3-ubuntu-26.04-debug bash -li
 ```
 
 <br/>

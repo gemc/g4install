@@ -2,8 +2,10 @@
 #
 # Runs after the "Deploy Geant4 Images" workflow has published the images, pulls the amd64 Ubuntu
 # Geant4 *debug* image (Geant4 + CLHEP built RelWithDebInfo, so Valgrind can name the routines) and,
-# for each example in the matrix, compiles it and profiles a batch run with Callgrind, saving the top
-# 30 routines by instruction count.
+# for each matrix cell, compiles the example and hands the run command to the Callgrinder action
+# (gemc/Callgrinder) — the same tool used by ../src and ../clas12-systems. Callgrinder runs the
+# command under callgrind (with cache + branch simulation for CEst) and produces the per-category and
+# per-routine tables; the report job aggregates every cell into one summary.
 #
 # The matrix has two dimensions, run as the full cross product (one job per cell):
 #   * example      - add an entry under `strategy.matrix.example` with its `label`, its `path` under
@@ -64,11 +66,12 @@ jobs:
             echo "geant4_tag=${geant4_tag}"
           } >> "$GITHUB_OUTPUT"
 
-  callgrind:
-    name: Callgrind ${{ matrix.example.label }} / ${{ matrix.physics_list }}
+  profile:
+    name: Profile ${{ matrix.example.label }} / ${{ matrix.physics_list }}
     needs: [ discover ]
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # Cache + branch simulation (needed for CEst) makes callgrind slower than plain Ir counting.
+    timeout-minutes: 350
     strategy:
       fail-fast: false
       matrix:
@@ -105,12 +108,14 @@ jobs:
       EVENTS: ${{ matrix.example.events }}
       # Consumed by ci/build_example.sh to patch the example's physics list through the factory.
       PHYSICS_LIST: ${{ matrix.physics_list }}
+      # Profile a single-threaded batch run so the top routines are not split across worker threads.
+      G4FORCENUMBEROFTHREADS: "1"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Compile example and profile with Callgrind
+      - name: Compile example and prepare the run command
         run: |
           set -euo pipefail
 
@@ -119,8 +124,8 @@ jobs:
           DOCKER_ENTRYPOINT_SOURCE_ONLY=1 . /usr/local/bin/docker-entrypoint.sh
           eval "$(geant4-config --sh)"
 
-          # Compile the example (out-of-source, installed tree untouched). The script prints the
-          # resolved example source directory and the built executable, one per line.
+          # Compile the example (out-of-source, installed tree untouched; physics list patched to the
+          # extensible factory via PHYSICS_LIST). Prints the example source dir and the executable.
           build_out="${RUNNER_TEMP}/build_example.out"
           ci/build_example.sh "${EXAMPLE_PATH}" > "$build_out"
           src="$(sed -n '1p' "$build_out")"
@@ -151,70 +156,66 @@ jobs:
           fi
 
           # Some examples (e.g. optical/wls) parse the macro via a "-m" option; others take it as the
-          # first positional argument. Pick based on the example sources.
+          # first positional argument.
           if grep -qE '"\-m"' "$src"/*.cc 2>/dev/null; then
-            run_args=(-m "$run_macro")
+            command="$bin -m $run_macro"
           else
-            run_args=("$run_macro")
+            command="$bin $run_macro"
           fi
 
-          # Profile a single-threaded batch run so the top routines are not split across worker threads.
-          export G4FORCENUMBEROFTHREADS=1
-          out="${GITHUB_WORKSPACE}/callgrind.out"
-          ( cd "$src" && valgrind --tool=callgrind --callgrind-out-file="$out" \
-              "$bin" "${run_args[@]}" )
+          # A filesystem-safe slug for the artifact name ('/' '+' ' ' -> '-').
+          slug="$(printf '%s-%s' "${{ matrix.example.label }}" "${PHYSICS_LIST}" | tr '/+ ' '---')"
 
-          # Annotate and extract the top 30 routines by instruction count (Ir).
-          callgrind_annotate --threshold=100 --auto=no "$out" > "${GITHUB_WORKSPACE}/callgrind_annotate.txt"
-          awk '
-            /file:function/ { infn=1; next }
-            infn && /^-+$/  { next }
-            infn {
-              if (NF==0) exit
-              print
-              if (++n >= 30) exit
-            }
-          ' "${GITHUB_WORKSPACE}/callgrind_annotate.txt" > "${GITHUB_WORKSPACE}/callgrind_top30.txt"
-
-          echo "Top 30 routines for ${EXAMPLE_PATH}:"
-          cat "${GITHUB_WORKSPACE}/callgrind_top30.txt"
-
-      - name: Job summary (top 30 routines)
-        if: always()
-        run: |
-          set -euo pipefail
-          top="${GITHUB_WORKSPACE}/callgrind_top30.txt"
+          # Export the run command, its working directory (for macro includes), the artifact slug, and
+          # the Geant4 runtime environment (library path + dataset variables) so the Callgrinder action,
+          # which runs the command in a later step, can locate the libraries and physics data.
           {
-            echo "## Callgrind — ${{ matrix.example.label }} — ${PHYSICS_LIST}"
-            echo ""
-            echo "Example \`${EXAMPLE_PATH}\` — physics list \`${PHYSICS_LIST}\` — \`${EVENTS}\` events"
-            echo "— Geant4 \`${GEANT4_TAG}\` debug image"
-            echo ""
-            if [ -s "$top" ]; then
-              echo "### Top 30 routines (by Ir)"
-              echo '```'
-              cat "$top"
-              echo '```'
-            else
-              echo "_No Callgrind output was produced (the run may have failed)._"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "PROFILE_COMMAND=${command}"
+            echo "PROFILE_WORKDIR=${src}"
+            echo "PROFILE_SLUG=${slug}"
+            echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
+            env | grep -E '^G4[A-Za-z0-9_]*='
+          } >> "$GITHUB_ENV"
 
-      # A filesystem-safe artifact name from the example label and physics list ('/' and '+' -> '-').
-      - name: Compute artifact name
-        if: always()
-        id: artifact
-        run: |
-          echo "name=callgrind-${{ matrix.example.label }}-${{ matrix.physics_list }}" \
-            | tr '/+' '--' >> "$GITHUB_OUTPUT"
+      - name: Profile with Callgrinder
+        uses: gemc/Callgrinder@v1
+        with:
+          mode: profile
+          name: ${{ matrix.example.label }} / ${{ matrix.physics_list }}
+          command: ${{ env.PROFILE_COMMAND }}
+          config: ci/callgrinder.json
+          working-directory: ${{ env.PROFILE_WORKDIR }}
+          output-dir: callgrinder-parts
 
-      - name: Upload Callgrind artifacts
+      - name: Upload profile
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.artifact.outputs.name }}
-          path: |
-            callgrind.out
-            callgrind_annotate.txt
-            callgrind_top30.txt
+          name: callgrinder-${{ env.PROFILE_SLUG }}
+          path: callgrinder-parts
           if-no-files-found: warn
+          retention-days: 30
+
+  report:
+    name: Aggregate the profiles
+    needs: [ profile ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download profiles
+        uses: actions/download-artifact@v7
+        with:
+          pattern: callgrinder-*
+          path: profiles
+
+      - name: Aggregate the category and routine tables
+        uses: gemc/Callgrinder@v1
+        with:
+          mode: report
+          input-dir: profiles
+
+      - name: Gate on profile results
+        if: needs.profile.result != 'success'
+        run: |
+          echo "### One or more profile jobs did not succeed." >> "$GITHUB_STEP_SUMMARY"
+          exit 1

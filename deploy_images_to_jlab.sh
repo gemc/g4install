@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-readonly default_geant4_version="11.4.2"
+readonly default_geant4_version="11.4.3"
 readonly default_os_flavor="almalinux"
 readonly default_os_version="9.4"
 readonly default_image="ghcr.io/gemc/g4install"
@@ -40,8 +40,8 @@ Options:
 
 Examples:
   $(basename "$0")
-  $(basename "$0") --geant4-version 11.4.2 --os-flavor almalinux --os-version 9.4
-  $(basename "$0") -g 11.4.2 -o almalinux -v 9.4 -d /tmp/g4install
+  $(basename "$0") --geant4-version 11.4.3 --os-flavor almalinux --os-version 9.4
+  $(basename "$0") -g 11.4.3 -o almalinux -v 9.4 -d /tmp/g4install
 
 The AlmaLinux 9.4 images install as almalinux9-gcc11-arm64 and almalinux9-gcc11-x86_64.
 Existing package-version directories are replaced from the pulled images; unrelated versions are kept.
