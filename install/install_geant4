@@ -1,51 +1,197 @@
 #!/usr/bin/env zsh
 
-# preliminary
+usage() {
+    cat <<'EOF'
+Usage: install_geant4 VERSION
+       install_geant4 REPOSITORY NAME [--ref BRANCH_OR_TAG] [--prefix ABSOLUTE_PATH]
+
+Install an official version, or a Geant4 fork under SIM_HOME/geant4/NAME.
+Forks use the repository's default branch unless --ref is supplied. A successful
+fork install creates geant4/NAME using the dev module's dependency versions.
+NAME and the install directory must be unused. --prefix overrides the directory.
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+    usage >&2
+    exit 1
+elif [[ "$1" == --help || "$1" == -h ]]; then
+    usage
+    exit 0
+fi
+
 . "$(dirname "$(readlink -f "$0")")"/functions.zsh
+
 what="geant4"
 what_version=$1
+module_dir="$(dirname "$(readlink -f "$0")")"/../modules/$what
+url="https://github.com/Geant4/geant4.git"
+tag=""
+prefix=""
+fork_install=0
+
+# Distinguish a repository URL from an official version before loading any Geant4 module.
+# The first pattern accepts scheme URLs such as https://, ssh:// (including explicit ports),
+# and file://; the second accepts Git's SCP-style git@host:owner/repository.git syntax.
+# Git validates and opens the repository later, after the arguments and destination are checked.
+if [[ "$1" == *://* || "$1" == *@*:* ]]; then
+    fork_install=1
+    url=$1
+    [[ $# -ge 2 ]] || whine_and_quit "A fork repository requires an install name"
+    # NAME identifies the install directory and geant4/NAME module independently of the Git ref.
+    # Remove REPOSITORY and NAME so the remaining arguments consist only of option/value pairs.
+    what_version=$2
+    shift 2
+    while (( $# )); do
+        case "$1" in
+            --ref|--prefix)
+                [[ $# -ge 2 && -n "$2" ]] || whine_and_quit "Missing value for $1"
+                # An empty tag selects the default branch in clone_tag(); --ref selects a branch
+                # or tag explicitly. --prefix changes only the install path, keeping NAME intact.
+                if [[ "$1" == --ref ]]; then
+                    tag=$2
+                else
+                    prefix=$2
+                fi
+                shift 2
+                ;;
+            *) whine_and_quit "Unknown argument: $1" ;;
+        esac
+    done
+    # Relative prefixes would depend on the caller's working directory, so require an absolute path.
+    # Refuse existing modulefiles, including dangling symlinks, to preserve previously registered names.
+    # Check module-directory permissions before starting a build that needs to publish a new module.
+    [[ -z "$prefix" || "$prefix" == /* ]] || whine_and_quit "--prefix must be an absolute path"
+    [[ ! -e "$module_dir/$what_version" && ! -L "$module_dir/$what_version" ]] ||
+        whine_and_quit "Module geant4/$what_version already exists; choose a new name"
+    [[ -w "$module_dir" ]] || whine_and_quit "Module directory is not writable: $module_dir"
+else
+    # Preserve the single-argument release interface: 11.4.3 clones v11.4.3 from the official repo.
+    # Leave tag empty for dev so it clones the official default branch without requesting a vdev tag.
+    [[ $# -eq 1 ]] || whine_and_quit "Extra arguments require a fork repository and install name"
+    [[ "$what_version" == dev ]] || tag="v$what_version"
+fi
+
+# Keep module names to one safe path component, including for official versions.
+[[ "$what_version" =~ '^[A-Za-z0-9][A-Za-z0-9._-]*$' ]] ||
+    whine_and_quit "Invalid module name: $what_version"
+
 ensure_modules || whine_and_quit "ensure_modules failure"
-prepare_version $what $what_version || whine_and_quit "prepare_version failure"
+if (( fork_install )); then
+    prepare_version "$module_dir" "$what" dev || whine_and_quit "prepare_version failure"
+    clhep_version=$CLHEP_VERSION
+    xercesc_version=$XERCESC_VERSION
+    module unload geant4/dev || whine_and_quit "Cannot unload geant4/dev"
+    module load "clhep/$clhep_version" "xercesc/$xercesc_version" ||
+        whine_and_quit "Cannot load fork dependencies"
+    base_dir=${prefix:-"$SIM_HOME/geant4/$what_version"}
+    base_dir=${base_dir:A}
+    [[ ! -e "$base_dir" || -d "$base_dir" ]] || whine_and_quit "Destination is not a directory"
+    contents=("$base_dir"/*(DN))
+    (( ${#contents} == 0 )) || whine_and_quit "Destination is not empty: $base_dir"
+    export G4_VERSION="$what_version" G4INSTALL="$base_dir"
+else
+    prepare_version "$module_dir" "$what" "$what_version" || whine_and_quit "prepare_version failure"
+    base_dir="$G4INSTALL"
+fi
 check_qmake_existance
 
-echo " > Checking / Installing missing dependencies for geant4 version $geant4_version: clhep and xercesc"
+echo " > Checking / Installing missing dependencies for geant4 $what_version: clhep and xercesc"
 echo
-[ "$(moduleTestResult clhep   $CLHEP_VERSION)"   -eq 0 ] && echo " > clhep $CLHEP_VERSION is installed"     || install_clhep $CLHEP_VERSION
-[ "$(moduleTestResult xercesc $XERCESC_VERSION)" -eq 0 ] && echo " > xercesc $XERCESC_VERSION is installed" || install_xercesc $XERCESC_VERSION
+if [ "$(moduleTestResult clhep "$CLHEP_VERSION")" -eq 0 ]; then
+    echo " > clhep $CLHEP_VERSION is installed"
+else
+    install_clhep "$CLHEP_VERSION" || whine_and_quit "CLHEP installation failed"
+fi
+if [ "$(moduleTestResult xercesc "$XERCESC_VERSION")" -eq 0 ]; then
+    echo " > xercesc $XERCESC_VERSION is installed"
+else
+    install_xercesc "$XERCESC_VERSION" || whine_and_quit "Xerces-C installation failed"
+fi
 
 # geant4 specific
-tag="v$G4_VERSION"
-url="https://github.com/Geant4/geant4.git"
-base_dir="$G4INSTALL"
 source_dir="$G4INSTALL/source"
 build_dir="$G4INSTALL/build"
-cmake_gdml="  -DGEANT4_USE_GDML=ON -DXERCESC_ROOT_DIR=$XERCESCROOT -DXercesC_INCLUDE_DIR=$XERCESCROOT/include -DXercesC_VERSION=$XERCESC_VERSION"
+cmake_gdml="  -DGEANT4_USE_GDML=ON -DXERCESC_ROOT_DIR=$XERCESCROOT"
+cmake_gdml+=" -DXercesC_INCLUDE_DIR=$XERCESCROOT/include -DXercesC_VERSION=$XERCESC_VERSION"
 cmake_clhep=" -DCLHEP_ROOT_DIR=$CLHEP_BASE_DIR"
-cmake_qt6="   -DQT_QMAKE_EXECUTABLE=$qmake_path  -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON"
+cmake_qt6="   -DQT_QMAKE_EXECUTABLE=$qmake_path  -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON -DGEANT4_USE_XR=ON"
 cmake_data="  -DGEANT4_INSTALL_DATA=ON -DGEANT4_INSTALL_PACKAGE_CACHE=ON"
-cmake_pack="  -DBUILD_STATIC_LIBS=ON -DGEANT4_USE_SYSTEM_EXPAT=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DGEANT4_USE_SYSTEM_ZLIB=ON"
+cmake_pack="  -DBUILD_STATIC_LIBS=ON -DGEANT4_USE_SYSTEM_EXPAT=ON"
+cmake_pack+=" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DGEANT4_USE_SYSTEM_ZLIB=ON"
 cmake_mt="    -DGEANT4_BUILD_MULTITHREADED=ON  -DGEANT4_BUILD_BUILTIN_BACKTRACE=OFF "
 x11_option=" -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_RAYTRACER_X11=ON "
 # Optional build type. Set G4_BUILD_TYPE=RelWithDebInfo to keep optimization while emitting debug
 # symbols (used by the profiling image so Valgrind can name Geant4 routines). Unset keeps the default.
 cmake_buildtype=""
 [ -n "${G4_BUILD_TYPE:-}" ] && cmake_buildtype="-DCMAKE_BUILD_TYPE=$G4_BUILD_TYPE"
-cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmake_mt $x11_option $cmake_buildtype"
+cmake_options="$cmake_gdml $cmake_clhep $cmake_qt6 $cmake_data $cmake_pack $cmake_mt"
+cmake_options+=" $x11_option $cmake_buildtype"
 #  not used
 # -DCMAKE_CXX_STANDARD=20
 # -DGEANT4_USE_SYSTEM_ZLIB=ON
 # -DBUILD_SHARED_LIBS=OFF
 # -DDGEANT4_USE_USOLIDS=ON, requires vecgeom installed
 # -DGEANT4_INSTALL_PACKAGE_CACHE=OFF
-# -DBUILD_SHARED_LIBS=OFF
 # -DGEANT4_USE_XM=OFF    # on macos
+# -DGEANT4_USE_XR=ON
 
 # logging and installing
 log_general "$what" "$what_version" "$base_dir"
-clone_tag "$url" "$tag" "$source_dir" "$what"
+mkdir -p "$base_dir" || whine_and_quit "Cannot create $base_dir"
+clone_tag "$url" "$tag" "$source_dir" "$what" || whine_and_quit "Geant4 clone failed"
 cmake_build_and_install "$source_dir" "$build_dir" "$base_dir" "$cmake_options" "$what"
+
+# Official versions already have modulefiles. Publish a module only for a successfully installed fork,
+# so module availability does not advertise a clone, configuration, or build that failed earlier.
+if (( fork_install )); then
+    # The generated Tcl module stores the absolute prefix in a double-quoted string. Escape backslashes
+    # first, then quotes, variable/command substitution characters, and line endings. This order preserves
+    # both literal path characters and the escapes we introduce, including for paths containing spaces.
+    module_prefix=${base_dir//\\/\\\\}
+    module_prefix=${module_prefix//\"/\\\"}
+    module_prefix=${module_prefix//\$/\\\$}
+    module_prefix=${module_prefix//\[/\\\[}
+    module_prefix=${module_prefix//\]/\\\]}
+    module_prefix=${module_prefix//$'\n'/\\n}
+    module_prefix=${module_prefix//$'\r'/\\r}
+    # Write to a unique hidden file beside the final module so readers never see a partially written file.
+    # The here-document expands the install prefix and dependency versions now; its escaped Tcl variable
+    # is left for the module loader to resolve when it sources the shared Geant4 environment definitions.
+    # install_prefix overrides .common's usual platform/version path, and prereq records the build's
+    # dependency versions so loading the fork later selects the same CLHEP and Xerces-C modules.
+    module_tmp=$(mktemp "$module_dir/.${what_version}.XXXXXX") || whine_and_quit "Cannot create module"
+    cat > "$module_tmp" <<EOF
+#%Module
+
+set version [file tail [module-info name]]
+set install_prefix "$module_prefix"
+
+prereq clhep/$clhep_version
+prereq xercesc/$xercesc_version
+
+source [file dirname \$ModulesCurrentModulefile]/.common
+EOF
+    # Remove the temporary file if writing failed; no public module name has been created at this point.
+    if (( $? != 0 )); then
+        rm -f "$module_tmp"
+        whine_and_quit "Cannot write module"
+    fi
+    # Make the complete module readable, then publish it with a hard link in the same directory.
+    # Creating the link is atomic and fails if another install claimed NAME after the initial check.
+    # It therefore publishes complete contents while preserving any concurrently created modulefile.
+    if ! chmod 644 "$module_tmp" || ! ln "$module_tmp" "$module_dir/$what_version"; then
+        rm -f "$module_tmp"
+        whine_and_quit "Cannot publish module"
+    fi
+    # Both names refer to the same file; removing the temporary name leaves the public module intact.
+    # Load it in this installer process before the final module test. The caller can load the same name
+    # in their own shell after the installer exits, using their existing module use registration.
+    rm -f "$module_tmp"
+    module load "geant4/$what_version" || whine_and_quit "Cannot load installed fork module"
+fi
 
 # all done. Testing module
 echo "$magenta > $what installation completed.$reset"
-module test $what/$what_version
+module test "$what/$what_version"
 exit $?

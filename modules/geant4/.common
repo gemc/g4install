@@ -6,7 +6,12 @@ prereq sim_system
 module-whatis geant4 framework, https://geant4.web.cern.ch
 source [file dirname $ModulesCurrentModulefile]/../util/functions.tcl
 
-set dir [home]/[osrelease]/geant4/${version}
+if {[info exists install_prefix]} {
+    set dir $install_prefix
+    unset install_prefix
+} else {
+    set dir [home]/[osrelease]/geant4/${version}
+}
 set ilib [choose_dir $dir/lib $dir/lib64]
 
 prepend-path PATH $dir/bin

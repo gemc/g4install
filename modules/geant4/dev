@@ -7,5 +7,3 @@ prereq xercesc/3.3.0
 
 source [file dirname $ModulesCurrentModulefile]/.common
 
-# latest on https://gitlab.cern.ch/geant4/geant4-dev
-setenv G4DEVTAG geant4-11-04-cand-00

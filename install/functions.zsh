@@ -1,12 +1,12 @@
 #!/bin/zsh
 
 # goodies for screen logs
-red=$(    tput setaf 1)
-green=$(  tput setaf 2)
-yellow=$( tput setaf 3)
-blue=$(   tput setaf 4)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
 magenta=$(tput setaf 5)
-reset=$(  tput sgr0)
+reset=$(tput sgr0)
 
 # needed otherwise cmake could pick up the system cc
 export CC=gcc
@@ -79,15 +79,16 @@ ensure_modules() {
 
 prepare_version() {
 	ensure_modules || {
-		print     -u2 -- "ERROR: cannot initialize modules"
-		return                                                      1
+		print -u2 -- "ERROR: cannot initialize modules"
+		return 1
 	}
 
-	local what="$1"
+	local module_dir="$1"
+	local what="$2"
 	local version
 
-	if [[ $# -eq 2 ]]; then
-		version="$2"
+	if [[ $# -eq 3 ]]; then
+		version="$3"
 	else
 		print -u2 -- "ERROR: No $what version given."
 		return 1
@@ -96,16 +97,22 @@ prepare_version() {
 	print -r -- " > Preparing $what module, version $version"
 
 	module purge || {
-		print   -u2 -- "ERROR: module purge failed"
-		return                                              1
+		print -u2 -- "ERROR: module purge failed"
+		return 1
 	}
 	module load sim_system || {
-		print             -u2 -- "ERROR: module load sim_system failed"
-		return                                                                  1
+		print -u2 -- "ERROR: module load sim_system failed"
+		return 1
 	}
+
+	if [[ ! -f "$module_dir"/$version ]]; then
+		print -u2 -- "ERROR: No modulefile for $what/$version."
+		return 1
+	fi
+
 	module load "$what/$version" || {
-		print                   -u2 -- "ERROR: module load $what/$version failed"
-		return                                                                            1
+		print -u2 -- "ERROR: module load $what/$version failed"
+		return 1
 	}
 
 	return 0
@@ -138,9 +145,8 @@ clone_tag() {
 	local -a args
 	args=(clone -c advice.detachedHead=false --recurse-submodules --shallow-submodules --depth 1)
 
-	if [[ "$tag" == "dev" ]]; then
-		# "dev" means: shallow clone of the default branch (no release tag)
-		args+=(--depth 1)
+	if [[ -z "$tag" ]]; then
+		# No ref means: shallow clone of the default branch (no release tag).
 		echo " > Command: git ${args[*]} $url $destination_dir"
 		git "${args[@]}" -- "$url" "$destination_dir" 2>&1 | sed 's/^/   /'
 		return ${pipestatus[1]}

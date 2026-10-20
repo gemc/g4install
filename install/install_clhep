@@ -2,10 +2,13 @@
 
 # preliminary
 . "$(dirname "$(readlink -f "$0")")"/functions.zsh
+
 what="clhep"
 what_version=$1
+module_dir="$(dirname "$(readlink -f "$0")")"/../modules/$what
+
 ensure_modules || whine_and_quit "ensure_modules failure"
-prepare_version "$what" "$what_version" || whine_and_quit "prepare_version failure"
+prepare_version "$module_dir" "$what" "$what_version" || whine_and_quit "prepare_version failure"
 
 # clhep specific
 tag="CLHEP_${CLHEP_VERSION//./_}"

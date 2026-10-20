@@ -64,6 +64,35 @@ command -v geant4-config
 
 <br/>
 
+### Install a Geant4 fork
+
+Upcoming in the next release: install a compatible Geant4 fork using its Git URL and a unique install name.
+
+```shell
+install_geant4 'ssh://git@github.com:7999/hello/hello-dev.git' hello-dev
+module load geant4/hello-dev
+geant4-config --version
+```
+
+The name selects both `<g4install>/<platform>/geant4/hello-dev` and the generated `geant4/hello-dev` module.
+The installer clones the default branch and uses the CLHEP and Xerces-C versions specified by `geant4/dev`.
+It creates the module only after a successful build and install. Keep the existing `module use` registration
+in your shell configuration to load generated modules in future sessions.
+
+Use `--ref` for a branch or tag and `--prefix` for a different absolute install path:
+
+```shell
+install_geant4 'git@github.com:hello/geant4.git' hello-custom \
+  --ref my-branch --prefix "$HOME/software/geant4/hello-custom"
+module load geant4/hello-custom
+```
+
+Fork module names and destination directories must be unused; an existing empty directory is also accepted.
+Names may contain letters, digits, dots, underscores, and hyphens, and must start with a letter or digit.
+`G4_VERSION` identifies the module name; `geant4-config --version` reports the fork's actual Geant4 version.
+
+<br/>
+
 ## Compile a Geant4 example
 
 With the Geant4 module loaded, compile the bundled B5 example in a separate build directory:
