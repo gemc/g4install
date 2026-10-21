@@ -1,12 +1,15 @@
 #!/bin/zsh
 
-# goodies for screen logs
-red=$(tput setaf 1)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-magenta=$(tput setaf 5)
-reset=$(tput sgr0)
+# Use plain logs unless stdout is a terminal with color support.
+red="" green="" yellow="" blue="" magenta="" reset=""
+if [[ -t 1 && -n "${TERM:-}" ]] && [[ "$(tput colors 2>/dev/null)" -ge 8 ]]; then
+	red=$(tput setaf 1)
+	green=$(tput setaf 2)
+	yellow=$(tput setaf 3)
+	blue=$(tput setaf 4)
+	magenta=$(tput setaf 5)
+	reset=$(tput sgr0)
+fi
 
 # needed otherwise cmake could pick up the system cc
 export CC=gcc
