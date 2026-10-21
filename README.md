@@ -308,20 +308,11 @@ Install the Xcode Command Line Tools first, then install the remaining dependenc
 
 ```shell
 xcode-select --install
-brew install qt cmake modules icu4c
+brew install qt cmake modules
 brew install --cask xquartz
 export MODULESHOME="$(brew --prefix modules)"
 source "$MODULESHOME/init/zsh"
 ```
-
-Homebrew ICU supplies `unicode/uset.h`, which Xerces-C's ICU-dependent code requires. If CMake cannot locate
-Homebrew ICU, set its location in the shell used to run `install_geant4`:
-
-```shell
-export ICU_ROOT="$(brew --prefix icu4c)"
-```
-
-After changing the ICU location, reconfigure any failed Xerces-C build with a fresh build directory.
 
 </details>
 
